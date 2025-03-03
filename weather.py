@@ -23,6 +23,10 @@ city_coords = {
     "NYC" : (40.7826, -73.9656)
 }
 
+city_stations = {
+    "LA" : "KLAX",
+}
+
 # Cache for API responses to reduce API calls
 points_response_cache = {}
 
@@ -62,15 +66,14 @@ def kelvin_to_fahrenheit(kelvin):
 
 def get_current_temp(city):
     """
-    Get the current temperature for a city using OpenWeather API (NWS won't provide this)
+    Get the current temperature for a city using some weird mesowest API.
     """
-    lat, long = city_coords[city.upper()]
-
-    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={long}&appid={os.environ["OPEN_WEATHER_API_KEY"]}"
+    station = city_stations[city.upper()]
+    url = f"https://api.mesowest.net/v2/stations/timeseries?STID={station}&showemptystations=1&units=temp|F,speed|mph,english&recent=60&token=d8c6aee36a994f90857925cea26934be&complete=1&obtimezone=local"
     response = requests.get(url, headers=headers)
     json = response.json()
-
-    temp = kelvin_to_fahrenheit(json["current"]["temp"])
+    station = json["STATION"][0]
+    observations = station["OBSERVATIONS"]
+    temp = round(observations["air_temp_set_1"][-1])
     print(f"Current temp in {city}: {temp}")
     return temp
-
