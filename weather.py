@@ -26,8 +26,8 @@ city_coords = {
 
 points_response_cache = {}
 
-def get_points(city):
-    if city in points_response_cache:
+def get_points(city, force = False):
+    if city in points_response_cache and not force:
         return points_response_cache[city]
     lat, long = city_coords[city.upper()]
     url = f"https://api.weather.gov/points/{lat},{long}"
