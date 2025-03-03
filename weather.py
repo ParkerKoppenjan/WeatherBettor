@@ -22,10 +22,9 @@ city_coords = {
     "CHICAGO" : (41.7868, -87.7522),
     "PHILADELPHIA" : (39.8730, -75.2437),
     "NYC" : (40.7826, -73.9656)
-    }
+}
 
-
-def get_todays_high(coordinates : tuple) -> int:
+def get_todays_high(coordinates):
     lat, long = coordinates
     url = f"https://api.weather.gov/points/{lat},{long}"
     response = requests.get(url, headers=headers)
@@ -35,11 +34,3 @@ def get_todays_high(coordinates : tuple) -> int:
     forecast_data = forecast_response.json()
     high = forecast_data.get("properties").get("periods")[0].get("temperature")
     return high
-
-
-def main():
-    c = city_coords.get("LA")
-    print(get_todays_high(c))
-
-if __name__ == "__main__":
-    main()
