@@ -70,10 +70,11 @@ def make_signed_request_get(url):
     return response.json()
 
 class Range:
-    def __init__(self, ticker, low, high):
+    def __init__(self, ticker, low, high, price):
         self.ticker = ticker
         self.low = low
         self.high = high
+        self.price = price
 
     def __str__(self):
         if self.low is None and self.high is None:
@@ -87,6 +88,71 @@ class Range:
     def number_in_range(self, number):
         return (self.low is None or number > self.low) and (self.high is None or number < self.high)
 
+    def set_price(self, new_price):
+        self.price = new_price
+
+    def get_price(self):
+        return self.price
+
+    def get_ticker(self):
+        return self.ticker
+
+
+class Market:
+    valid_markets = ["AUSTIN", "NYC", "DENVER", "CHICAGO", "MIAMI", "LA", "PHILADELPHIA"]
+
+    def __init__(self, city):
+        if city not in Market.valid_markets:
+            raise ValueError("Invalid city")
+        self.city = city
+        self.ranges = self.get_ranges()
+        self.bets = []
+
+    def get_ranges(self):
+        event = get_event_for_city(self.city)
+        markets = event.get("markets")
+        ranges = []
+
+        for market in markets:
+            name = market.get("yes_sub_title")
+            degreeCount = name.count('°')
+
+            if degreeCount == 1:
+                if name.count('above') > 0:
+                    ranges.append(Range(market.get("ticker"), int(name.split('°')[0]), None, market.get("yes_ask") / 100))
+                else:
+                    ranges.append(Range(market.get("ticker"), None, int(name.split('°')[0]), market.get("yes_ask") / 100))
+            else:
+                range_split = name.split('to')
+                range1 = int(range_split[0].split('°')[0])
+                range2 = int(range_split[1].split('°')[0])
+                ranges.append(Range(market.get("ticker"), range1, range2, market.get("yes_ask") / 100))
+
+        return ranges
+
+    def update_prices(self):
+        event = get_event_for_city(self.city)
+        markets = event.get("markets")
+
+        for market in markets:
+            ticker = market.get("ticker")
+            price = market.get("yes_ask") / 100
+            for r in self.ranges:
+                if r.get_ticker() == ticker:
+                    r.set_price(price)
+
+    def make_bet(self, range):
+        if range not in self.ranges:
+            raise ValueError("Invalid range")
+
+
+
+        self.bets.append({
+            "ticker": range.get_ticker(),
+            "price": range.get_price()
+        })
+
+
 def get_date_in_kalshi_format():
     return datetime.now().strftime('%y%b%d').upper()
 
@@ -96,25 +162,3 @@ def get_todays_weather_ticker(city):
 def get_event_for_city(city):
     url = f"https://api.elections.kalshi.com/trade-api/v2/events/{get_todays_weather_ticker(city)}"
     return make_signed_request_get(url)
-
-def get_ranges_for_city(city):
-    event = get_event_for_city(city)
-    markets = event.get("markets")
-    ranges = []
-
-    for market in markets:
-        name = market.get("yes_sub_title")
-        degreeCount = name.count('°')
-
-        if degreeCount == 1:
-            if name.count('above') > 0:
-                ranges.append(Range(market.get("ticker"), int(name.split('°')[0]), None))
-            else:
-                ranges.append(Range(market.get("ticker"), None, int(name.split('°')[0])))
-        else:
-            range_split = name.split('to')
-            range1 = int(range_split[0].split('°')[0])
-            range2 = int(range_split[1].split('°')[0])
-            ranges.append(Range(market.get("ticker"), range1, range2))
-
-    return ranges
