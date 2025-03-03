@@ -1,4 +1,6 @@
+import json
 import math
+import time
 import uuid
 
 import requests
@@ -70,6 +72,8 @@ def make_signed_request_get(url):
         'KALSHI-ACCESS-TIMESTAMP': timestampt_str
     }
     response = requests.get(url, headers=headers)
+    if not response.headers.get("Content-Type").startswith("application/json"):
+        return response.text
     return response.json()
 
 def make_signed_request_post(url, data):
@@ -86,14 +90,18 @@ def make_signed_request_post(url, data):
         'KALSHI-ACCESS-TIMESTAMP': timestampt_str
     }
     response = requests.post(url, headers=headers, json=data)
+    if not response.headers.get("Content-Type").startswith("application/json"):
+        return response.text
     return response.json()
 
 class Range:
-    def __init__(self, ticker, low, high, price):
+    def __init__(self, ticker, low, high, price, price_ask):
+        print(f"Creating range for {ticker} from {low} to {high} at {price} with ask price {price_ask}")
         self.ticker = ticker
         self.low = low
         self.high = high
         self.price = price
+        self.price_ask = price_ask
 
     def __str__(self):
         if self.low is None and self.high is None:
@@ -105,34 +113,76 @@ class Range:
         return f"{self.low} to {self.high}"
 
     def number_in_range(self, number):
-        return (self.low is None or number > self.low) and (self.high is None or number < self.high)
+        return (self.low is None or number >= self.low) and (self.high is None or number <= self.high)
+
+    def get_high(self):
+        return self.high
+
+    def get_low(self):
+        return self.low
+
+    def get_price(self):
+        return self.price
+
+    def set_price(self, price):
+        self.price = price
+
+    def set_price_ask(self, price):
+        self.price_ask = price
+
+    def get_price_ask(self):
+        return self.price_ask
+
+    def get_ticker(self):
+        return self.ticker
 
 class Bet:
     def __init__(self, city, range, amount):
         self.city = city
         self.range = range
-        self.client_order_id = uuid.uuid4()
-        self.price = range.price
+        self.client_order_id = str(uuid.uuid4())
+        self.price = max(range.get_price_ask(), 0.01)
         self.count = math.floor(amount / self.price)
+
+        print(f"Making bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
 
         url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders"
 
         data = {
             "action": "buy",
-            "ticker": range.ticker,
+            "ticker": range.get_ticker(),
             "side": "yes",
             "type": "market",
-            "client_order_id": str(self.client_order_id),
+            "client_order_id": self.client_order_id,
             "count": self.count,
             "yes_price": 0,
             "no_price": 0
         }
 
         response = make_signed_request_post(url, data)
-        print(response)
+        if response.get("error"):
+            print("Something went wrong while placing bet")
+            print(response.get("error"))
         order = response.get("order")
-        self.id = order.get("order_id")
+        print("\nCurrent order status:")
+        print(json.dumps(order, indent=2))
+        print()
         self.status = order.get("status")
+        self.id = order.get("order_id")
+        while self.status == "resting" or self.status == "pending":
+            time.sleep(1)
+            url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders/{self.id}"
+            response = make_signed_request_get(url)
+            order = response.get("order")
+            print("\nCurrent order status:")
+            print(json.dumps(order, indent=2))
+            print()
+            self.status = order.get("status")
+
+        print(f"Successfully placed bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
+
+
+
 
     def check_status(self):
         url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders/{self.id}"
@@ -145,6 +195,8 @@ class Bet:
         return f"{self.city}: {self.range}"
 
     def pull_out(self):
+        print(f"Pulling out of {self.city} at {self.range} for {self.count} shares")
+
         url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders"
 
         data = {
@@ -154,17 +206,31 @@ class Bet:
             "yes_price": 0,
             "no_price": 0,
             "type": "market",
-            "ticker": self.range.ticker,
+            "ticker": self.range.get_ticker(),
             "side": "yes"
         }
 
         response = make_signed_request_post(url, data)
 
+        if response.get("error"):
+            print("Something went wrong while pulling out")
+            print(response.get("error"))
+
         order = response.get("order")
         if order:
+            print(f"Successfully pulled out of {self.city} at {self.range} for {self.count} shares at {order.get('yes_price')}")
             del self
 
         return order
+
+    def get_range(self):
+        return self.range
+
+    def get_price(self):
+        return self.price
+
+    def get_potential_profit(self):
+        return self.count * (self.range.get_price() - self.price)
 
 
 class Market:
@@ -174,10 +240,11 @@ class Market:
         if city not in Market.valid_markets:
             raise ValueError("Invalid city")
         self.city = city
-        self.ranges = self.get_ranges()
-        self.bet = None
+        self.ranges = self.update_ranges()
+        self.bets = []
 
-    def get_ranges(self):
+
+    def update_ranges(self):
         event = get_event_for_city(self.city)
         markets = event.get("markets")
         ranges = []
@@ -185,18 +252,21 @@ class Market:
         for market in markets:
             name = market.get("yes_sub_title")
             degree_count = name.count('°')
+            price = market.get("yes_bid") / 100
+            price_ask = market.get("yes_ask") / 100
 
             if degree_count == 1:
                 if name.count('above') > 0:
-                    ranges.append(Range(market.get("ticker"), int(name.split('°')[0]), None, market.get("yes_bid") / 100))
+                    ranges.append(Range(market.get("ticker"), int(name.split('°')[0]), None, price, price_ask))
                 else:
-                    ranges.append(Range(market.get("ticker"), None, int(name.split('°')[0]), market.get("yes_bid") / 100))
+                    ranges.append(Range(market.get("ticker"), None, int(name.split('°')[0]), price, price_ask))
             else:
                 range_split = name.split('to')
                 range1 = int(range_split[0].split('°')[0])
                 range2 = int(range_split[1].split('°')[0])
-                ranges.append(Range(market.get("ticker"), range1, range2, market.get("yes_bid") / 100))
+                ranges.append(Range(market.get("ticker"), range1, range2, price, price_ask))
 
+        self.ranges = ranges
         return ranges
 
     def update_prices(self):
@@ -206,24 +276,51 @@ class Market:
         for market in markets:
             ticker = market.get("ticker")
             price = market.get("yes_bid") / 100
+            price_ask = market.get("yes_ask") / 100
             for r in self.ranges:
-                if r.ticker == ticker:
-                    r.price = price
+                if r.get_ticker() == ticker:
+                    r.set_price(price)
+                    r.set_price_ask(price_ask)
 
-    def get_current_bet(self):
-        return self.bet
+        for r in self.ranges:
+            print(f"Range: {r} has price {r.get_price()} and ask price {r.get_price_ask()}")
+
+    def get_bets(self):
+        return self.bets
 
     def make_bet(self, range, amount):
-        if self.bet:
-            self.bet.pull_out()
+        if len(self.bets) > 0:
+            print("Warning: Already have a bet")
+
+        if range.get_price() < 0.01 or range.get_price_ask() < 0.01:
+            print("Warning: Price is too low")
+            return None
+
+        if range.get_price_ask() > 0.95:
+            print("Warning: Price is too high")
+            return None
 
         bet = Bet(self.city, range, amount)
-        self.bet = bet
+        self.bets.append(bet)
         return bet
 
     def sell_bet(self, bet):
         bet.pull_out()
-        self.bet = None
+        self.bets.remove(bet)
+
+    def get_range_for_temp(self, temp):
+        for r in self.ranges:
+            if r.number_in_range(temp):
+                return r
+        return None
+
+    def get_total_potential_profit(self):
+        return sum([bet.get_potential_profit() for bet in self.bets])
+
+    def sell_all_bets(self):
+        for bet in self.bets:
+            bet.pull_out()
+        self.bets = []
 
 
 def get_date_in_kalshi_format():
@@ -235,6 +332,10 @@ def get_todays_weather_ticker(city):
 def get_event_for_city(city):
     url = f"https://api.elections.kalshi.com/trade-api/v2/events/{get_todays_weather_ticker(city)}"
     response = make_signed_request_get(url)
-    if response.get("error"):
-        raise ValueError("Invalid city")
+    if not isinstance(response, dict) or response.get("error") or not response.get("event"):
+        print("Incorrect response from Kalshi")
+        print(response)
+        return {
+            "event": {}
+        }
     return response

@@ -3,6 +3,10 @@
 # Change temp based off time
 
 import requests
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 headers = {
     "User-Agent": "WeatherBettor (me@elliotjarnit.dev, parkerkoppenjan@gmail.com)"
@@ -38,20 +42,18 @@ def get_forecasted_highest_temperature(city):
     high = forecast_data.get("properties").get("periods")[0].get("temperature")
     return high
 
+def kelvin_to_fahrenheit(kelvin):
+    return round((kelvin - 273.15) * (9 / 5) + 32)
+
 def get_current_temp(city):
-    data = get_points(city)
+    lat, long = city_coords[city.upper()]
 
-    # get the station
-    stations_url = data.get("properties").get("observationStations")
-    stations_response = requests.get(stations_url, headers=headers)
-    stations_data = stations_response.json()
-    station_id = stations_data.get("features")[0].get("properties").get("stationIdentifier")
+    url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={long}&appid={os.environ["OPEN_WEATHER_API_KEY"]}"
+    response = requests.get(url, headers=headers)
+    json = response.json()
 
-    obs_url = f"https://api.weather.gov/stations/{station_id}/observations/latest"
-    obs_response = requests.get(obs_url, headers=headers)
-    obs_data = obs_response.json()
-
-    temp = obs_data.get("properties").get("temperature").get("value")  # in celsius (I HATE CELSIUS)
-    if temp is not None:
-        temp = round(temp * 9 / 5 + 32)  # convert to Fahrenheit
+    temp = kelvin_to_fahrenheit(json["current"]["temp"])
+    print(f"Current temp in {city}: {temp}")
     return temp
+
+get_current_temp("LA")
