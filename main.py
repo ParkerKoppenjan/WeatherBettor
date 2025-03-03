@@ -8,7 +8,7 @@ selected_market = "LA"
 market = Market(selected_market)
 
 running = True
-last_bet_price = market.get_bets()[0].get_price()
+last_bet_price = market.get_bets()[-1].get_price()
 # Get the forecasted high temperature for selected location(s)
 forecasted_high = weather.get_forecasted_highest_temperature(selected_market)
 
@@ -20,6 +20,8 @@ print("Forecasted high: " + str(forecasted_high))
 # Makes initial bet based on forecasted high
 range = market.get_range_for_temp(forecasted_high)
 market.make_bet(range, settings.MAX_BET)
+
+
 
 def loop():
     """
@@ -38,7 +40,7 @@ def loop():
     if current_temp > current_range.get_high():
         range_to_bet = market.get_range_for_temp(current_temp)
         market.sell_all_bets()
-        market.make_bet(range, settings.MAX_BET)
+        market.make_bet(range_to_bet, settings.MAX_BET)
         last_bet_price = market.get_bets()[0].get_price()
 
     # If the current price is higher than 0.95, sell all bets and stop the loop
@@ -76,7 +78,7 @@ while running:
             last_bet_price = market.get_bets()[0].get_price
 
     print()
-    time.sleep(0.2)
+    time.sleep(1)
 
 
 
