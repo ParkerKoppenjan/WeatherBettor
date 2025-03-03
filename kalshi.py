@@ -292,6 +292,14 @@ class Market:
         if len(self.bets) > 0:
             print("Warning: Already have a bet")
 
+        if range.get_price() < 0.01 or range.get_price_ask() < 0.01:
+            print("Warning: Price is too low")
+            return None
+
+        if range.get_price_ask() > 0.95:
+            print("Warning: Price is too high")
+            return None
+
         bet = Bet(self.city, range, amount)
         self.bets.append(bet)
         return bet
