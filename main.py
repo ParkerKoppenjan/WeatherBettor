@@ -24,7 +24,7 @@ def loop():
 
     market.update_prices()
     bets = market.get_bets()
-    current_range = bets[0].get_range()
+    current_range = bets[-1].get_range()
     current_temp = weather.get_current_temp(selected_market)
 
     # If the current temp is higher than the current range, sell all bets and make a bet in the new range
