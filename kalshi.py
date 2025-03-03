@@ -194,7 +194,7 @@ class Market:
             raise ValueError("Invalid city")
         self.city = city
         self.ranges = self.get_ranges()
-        self.bets = []
+        self.bet = None
 
     def get_ranges(self):
         event = get_event_for_city(self.city)
@@ -229,21 +229,20 @@ class Market:
                 if r.get_ticker() == ticker:
                     r.set_price(price)
 
-    def get_bets(self):
-        return self.bets
+    def get_current_bet(self):
+        return self.bet
 
     def make_bet(self, range, amount):
-        if len(self.bets) > 0:
-            for bet in self.bets:
-                bet.pull_out()
+        if self.bet:
+            self.bet.pull_out()
 
         bet = Bet(self.city, range, amount)
-        self.bets.append(bet)
+        self.bet = bet
         return bet
 
     def sell_bet(self, bet):
         bet.pull_out()
-        self.bets.remove(bet)
+        self.bet = None
 
 
 def get_date_in_kalshi_format():
