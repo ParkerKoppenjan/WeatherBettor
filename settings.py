@@ -1,2 +1,2 @@
-MAX_BET = 100
+MAX_BET = 5
 COOLDOWN = 10 # seconds
