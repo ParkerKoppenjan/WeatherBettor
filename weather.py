@@ -24,22 +24,27 @@ city_coords = {
     "NYC" : (40.7826, -73.9656)
 }
 
-def get_todays_high(coordinates):
-    lat, long = coordinates
+points_response_cache = {}
+
+def get_points(city):
+    if city in points_response_cache:
+        return points_response_cache[city]
+    lat, long = city_coords[city.upper()]
     url = f"https://api.weather.gov/points/{lat},{long}"
     response = requests.get(url, headers=headers)
-    data = response.json()
+    points_response_cache[city] = response.json()
+    return response.json()
+
+def get_forecasted_highest_temperature(city):
+    data = get_points(city)
     forecast_url = data.get("properties").get("forecast")
     forecast_response = requests.get(forecast_url, headers=headers)
     forecast_data = forecast_response.json()
     high = forecast_data.get("properties").get("periods")[0].get("temperature")
     return high
 
-def get_current_temp(coordinates : tuple) -> int:
-    lat, long = coordinates
-    url = f"https://api.weather.gov/points/{lat},{long}"
-    response = requests.get(url, headers=headers)
-    data = response.json()
+def get_current_temp(city):
+    data = get_points(city)
 
     # get the station
     stations_url = data.get("properties").get("observationStations")
@@ -55,11 +60,3 @@ def get_current_temp(coordinates : tuple) -> int:
     if temp is not None:
         temp = round(temp * 9 / 5 + 32)  # convert to Fahrenheit
     return temp
-
-def main():
-    c = city_coords.get("LA")
-    print(get_todays_high(c))
-    print(get_current_temp(c))
-
-if __name__ == "__main__":
-    main()
