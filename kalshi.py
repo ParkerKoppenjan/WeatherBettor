@@ -114,7 +114,14 @@ class Range:
         return self.price
 
     def get_ticker(self):
+        return "KXUCLROUND-25BVBLIL-BVB"
         return self.ticker
+
+    def get_low(self):
+        return self.low
+
+    def get_high(self):
+        return self.high
 
 class Bet:
     def __init__(self, city, range, amount):
@@ -138,6 +145,7 @@ class Bet:
         }
 
         response = make_signed_request_post(url, data)
+        print(response)
         order = response.get("order")
         self.id = order.get("order_id")
         self.status = order.get("status")
@@ -160,7 +168,7 @@ class Bet:
 
         data = {
             "action": "sell",
-            "client_order_id": uuid.uuid4(),
+            "client_order_id": str(uuid.uuid4()),
             "count": self.count,
             "yes_price": 0,
             "no_price": 0,
@@ -242,8 +250,11 @@ def get_date_in_kalshi_format():
     return datetime.now().strftime('%y%b%d').upper()
 
 def get_todays_weather_ticker(city):
-    return tickers.get(city.upper()) + '-' + get_date_in_kalshi_format()
+    return tickers.get(city.upper()).upper() + '-' + get_date_in_kalshi_format()
 
 def get_event_for_city(city):
     url = f"https://api.elections.kalshi.com/trade-api/v2/events/{get_todays_weather_ticker(city)}"
-    return make_signed_request_get(url)
+    response = make_signed_request_get(url)
+    if response.get("error"):
+        raise ValueError("Invalid city")
+    return response
