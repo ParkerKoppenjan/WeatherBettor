@@ -1,3 +1,4 @@
+import json
 import math
 import time
 import uuid
@@ -170,6 +171,9 @@ class Bet:
             url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders/{self.id}"
             response = make_signed_request_get(url)
             order = response.get("order")
+            print("\nCurrent order status:")
+            print(json.dumps(order, indent=2))
+            print()
             self.status = order.get("status")
             self.price = order.get("maker_fill_cost") / 100
 
