@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-privateKeyName = os.environ["KALSHI_PRIVATE_KEY_NAME"]
-accessKey = os.environ["KALSHI_ACCESS_KEY"]
+private_key_name = os.environ["KALSHI_PRIVATE_KEY_NAME"]
+access_key = os.environ["KALSHI_ACCESS_KEY"]
 
 tickers = {
     "AUSTIN": "kxhighaus",
@@ -51,7 +51,7 @@ def sign_pss_text(private_key: rsa.RSAPrivateKey, text: str) -> str:
     except InvalidSignature as e:
         raise ValueError("RSA sign PSS failed") from e
 
-private_key = load_private_key_from_file('kalshi--key.key')
+private_key = load_private_key_from_file(private_key_name)
 
 def make_signed_request_get(url):
     path = url.split("https://api.elections.kalshi.com")[1]
@@ -62,23 +62,31 @@ def make_signed_request_get(url):
     msg_string = timestampt_str + "GET" + path
     sig = sign_pss_text(private_key, msg_string)
     headers = {
-        'KALSHI-ACCESS-KEY': accessKey,
+        'KALSHI-ACCESS-KEY': access_key,
         'KALSHI-ACCESS-SIGNATURE': sig,
         'KALSHI-ACCESS-TIMESTAMP': timestampt_str
     }
     response = requests.get(url, headers=headers)
     return response.json()
 
+class Range:
+    def __init__(self, ticker, low, high):
+        self.ticker = ticker
+        self.low = low
+        self.high = high
+
+    def number_in_range(self, number):
+        return (self.low is None or number > self.low) and (self.high is None or number < self.high)
+
 def get_date_in_kalshi_format():
-    return datetime.now().strftime('%y%d%b').upper()
+    return datetime.now().strftime('%y%b%d').upper()
 
 def get_todays_weather_ticker(city):
     return tickers.get(city.upper()).upper() + '-' + get_date_in_kalshi_format()
 
 def get_event_for_city(city):
     url = f"https://api.elections.kalshi.com/trade-api/v2/events/{get_todays_weather_ticker(city)}"
-    response = requests.get(url, headers=headers)
-    return response.json()
+    return make_signed_request_get(url)
 
 def get_ranges_for_city(city):
     event = get_event_for_city(city)
@@ -88,19 +96,16 @@ def get_ranges_for_city(city):
     for market in markets:
         name = market.get("yes_sub_title")
         degreeCount = name.count('°')
-        range = []
 
         if degreeCount == 1:
             if name.count('above') > 0:
-                range = [int(name.split('°')[0]), 300]
+                ranges.append(Range(market.get("ticker"), int(name.split('°')[0]), None))
             else:
-                range = [-300, int(name.split('°')[0])]
+                ranges.append(Range(market.get("ticker"), None, int(name.split('°')[0])))
         else:
-            rangeSplit = range.split('to')
-            range1 = int(rangeSplit[0].split('°')[0])
-            range2 = int(rangeSplit[1].split('°')[0])
-            range = [range1, range2]
-
-        ranges.append(range)
+            range_split = name.split('to')
+            range1 = int(range_split[0].split('°')[0])
+            range2 = int(range_split[1].split('°')[0])
+            ranges.append(Range(market.get("ticker"), range1, range2))
 
     return ranges
