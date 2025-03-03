@@ -54,6 +54,7 @@ def loop():
 
 current_minute = time.localtime().tm_min
 while running:
+    print(f"{selected_market} - {time.localtime().tm_hour}:{time.localtime().tm_min}")
     # Run loop right when the minute changes
     if time.localtime().tm_min != current_minute:
         loop()
@@ -74,6 +75,7 @@ while running:
             market.make_bet(range, settings.MAX_BET)
             last_bet_price = market.get_bets()[0].get_price
 
+    print()
     time.sleep(0.2)
 
 
