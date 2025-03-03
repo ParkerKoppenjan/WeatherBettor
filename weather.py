@@ -12,7 +12,7 @@ headers = {
     "User-Agent": "WeatherBettor (me@elliotjarnit.dev, parkerkoppenjan@gmail.com)"
 }
 
-# scooped up the coordinates for each betting location, not always the airport
+# Geographic coordinates for each city where bets can be placed (not always airport)
 city_coords = {
     "LA" : (33.9422,-118.4036),
     "AUSTIN" : (30.1941, -97.6711),
@@ -23,9 +23,21 @@ city_coords = {
     "NYC" : (40.7826, -73.9656)
 }
 
+# Cache for API responses to reduce API calls
 points_response_cache = {}
 
 def get_points(city, force = False):
+    """
+    Get geographic point data from the NWS API for a given city.
+    Uses cached data unless forced to refresh.
+
+    Args:
+        city (str): City to get point data for
+        force (bool): Whether to force a fresh API call instead of using cache
+
+    Returns:
+        dict: JSON response from the NWS API, with point data
+    """
     if city in points_response_cache and not force:
         return points_response_cache[city]
     lat, long = city_coords[city.upper()]
@@ -35,6 +47,9 @@ def get_points(city, force = False):
     return response.json()
 
 def get_forecasted_highest_temperature(city):
+    """
+    Get the forecasted high temperature (F) for a city from the National Weather Service.
+    """
     data = get_points(city)
     forecast_url = data.get("properties").get("forecast")
     forecast_response = requests.get(forecast_url, headers=headers)
@@ -46,6 +61,9 @@ def kelvin_to_fahrenheit(kelvin):
     return round((kelvin - 273.15) * (9 / 5) + 32)
 
 def get_current_temp(city):
+    """
+    Get the current temperature for a city using OpenWeather API (NWS won't provide this)
+    """
     lat, long = city_coords[city.upper()]
 
     url = f"https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={long}&appid={os.environ["OPEN_WEATHER_API_KEY"]}"
@@ -56,4 +74,3 @@ def get_current_temp(city):
     print(f"Current temp in {city}: {temp}")
     return temp
 
-get_current_temp("LA")

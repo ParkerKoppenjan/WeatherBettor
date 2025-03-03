@@ -18,6 +18,7 @@ load_dotenv()
 private_key_name = os.environ["KALSHI_PRIVATE_KEY_NAME"]
 access_key = os.environ["KALSHI_ACCESS_KEY"]
 
+# Mapping of city names to their Kalshi tickers
 tickers = {
     "AUSTIN": "kxhighaus",
     "NYC": "kxhighny",
@@ -29,6 +30,15 @@ tickers = {
 }
 
 def load_private_key_from_file(file_path):
+    """
+    Load a private key from a PEM file.
+
+    Args:
+        file_path (str): Path to the private key file
+
+    Returns:
+        RSAPrivateKey: The loaded private key object
+    """
     with open(file_path, "rb") as key_file:
         private_key = serialization.load_pem_private_key(
             key_file.read(),
@@ -59,6 +69,15 @@ def sign_pss_text(private_key, text):
 private_key = load_private_key_from_file(private_key_name)
 
 def make_signed_request_get(url):
+    """
+       Make a signed GET request to the Kalshi API.
+
+       Args:
+           url (str): The full URL to send the GET request to
+
+       Returns:
+           dict or str: The JSON response or text if not JSON
+       """
     path = url.split("https://api.elections.kalshi.com")[1]
     current_time = datetime.now()
     timestamp = current_time.timestamp()
@@ -77,6 +96,16 @@ def make_signed_request_get(url):
     return response.json()
 
 def make_signed_request_post(url, data):
+    """
+    Make a signed POST request to the Kalshi API.
+
+    Args:
+        url (str): The full URL to send the POST request to
+        data (dict): The data to send in the POST request
+
+    Returns:
+        dict or str: The JSON response or text if not JSON
+    """
     path = url.split("https://api.elections.kalshi.com")[1]
     current_time = datetime.now()
     timestamp = current_time.timestamp()
@@ -95,7 +124,21 @@ def make_signed_request_post(url, data):
     return response.json()
 
 class Range:
+    """
+    Represents a temperature range on Kalshi that can be bet on.
+    A range can have a low bound, high bound, or both.
+    """
     def __init__(self, ticker, low, high, price, price_ask):
+        """
+        Initialize a new temperature range.
+
+        Args:
+            ticker (str): Kalshi ticker symbol for this range
+            low (int or None): Lower bound of temperature range (None if no lower bound)
+            high (int or None): Upper bound of temperature range (None if no upper bound)
+            price (float): Current bid price for this range
+            price_ask (float): Current ask price for this range
+        """
         print(f"Creating range for {ticker} from {low} to {high} at {price} with ask price {price_ask}")
         self.ticker = ticker
         self.low = low
@@ -137,7 +180,19 @@ class Range:
         return self.ticker
 
 class Bet:
+    """
+      Represents a bet placed on Kalshi for a specific temperature range.
+      Handles the creation and management of orders on the Kalshi platform.
+    """
     def __init__(self, city, range, amount):
+        """
+        Initialize and place a new bet.
+
+        Args:
+            city (str): City being bet on
+            range (Range): Temperature range being bet on
+            amount (float): Maximum amount to bet in dollars
+        """
         self.city = city
         self.range = range
         self.client_order_id = str(uuid.uuid4())
@@ -185,6 +240,12 @@ class Bet:
 
 
     def check_status(self):
+        """
+        Check the current status of this bet on Kalshi.
+
+        Returns:
+            str: Current status of the order
+        """
         url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders/{self.id}"
         response = make_signed_request_get(url)
         order = response.get("order")
@@ -195,6 +256,12 @@ class Bet:
         return f"{self.city}: {self.range}"
 
     def pull_out(self):
+        """
+        Sell this bet and exit the position.
+
+        Returns:
+            dict: Order details from Kalshi
+        """
         print(f"Pulling out of {self.city} at {self.range} for {self.count} shares")
 
         url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders"
@@ -234,9 +301,20 @@ class Bet:
 
 
 class Market:
+    """
+    Represents a city's weather betting market on Kalshi.
+    Manages the available temperature ranges and placed bets for a city.
+    """
     valid_markets = ["AUSTIN", "NYC", "DENVER", "CHICAGO", "MIAMI", "LA", "PHILADELPHIA"]
 
     def __init__(self, city):
+        """
+        Initialize a market for a specific city.
+
+        Args:
+            city (str): City to track
+
+        """
         if city not in Market.valid_markets:
             raise ValueError("Invalid city")
         self.city = city
@@ -245,6 +323,12 @@ class Market:
 
 
     def update_ranges(self):
+        """
+        Update the available temperature ranges for this market from Kalshi.
+
+        Returns:
+            list: Updated list of Range objects
+        """
         event = get_event_for_city(self.city)
         markets = event.get("markets")
         ranges = []
@@ -270,6 +354,8 @@ class Market:
         return ranges
 
     def update_prices(self):
+        """Update the prices for all temperature ranges from the current Kalshi market data."""
+
         event = get_event_for_city(self.city)
         markets = event.get("markets")
 
