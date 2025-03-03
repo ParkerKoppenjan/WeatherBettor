@@ -75,6 +75,15 @@ class Range:
         self.low = low
         self.high = high
 
+    def __str__(self):
+        if self.low is None and self.high is None:
+            return "Any"
+        elif self.low is None:
+            return f"Up to {self.high}"
+        elif self.high is None:
+            return f"{self.low} and up"
+        return f"{self.low} to {self.high}"
+
     def number_in_range(self, number):
         return (self.low is None or number > self.low) and (self.high is None or number < self.high)
 

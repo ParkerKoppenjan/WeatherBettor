@@ -10,6 +10,10 @@ def main():
         print(f"\n\n{city}")
         print(f"Forecasted high: {forecasted_high}")
         print(f"Current temp: {current_temp}")
+        print("Ranges:")
+        ranges = kalshi.get_ranges_for_city(city)
+        for r in ranges:
+            print(r)
 
 
 if __name__ == "__main__":
