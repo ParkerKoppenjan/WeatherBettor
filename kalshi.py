@@ -207,14 +207,14 @@ class Market:
 
             if degree_count == 1:
                 if name.count('above') > 0:
-                    ranges.append(Range(market.get("ticker"), int(name.split('°')[0]), None, market.get("yes_ask") / 100))
+                    ranges.append(Range(market.get("ticker"), int(name.split('°')[0]), None, market.get("yes_bid") / 100))
                 else:
-                    ranges.append(Range(market.get("ticker"), None, int(name.split('°')[0]), market.get("yes_ask") / 100))
+                    ranges.append(Range(market.get("ticker"), None, int(name.split('°')[0]), market.get("yes_bid") / 100))
             else:
                 range_split = name.split('to')
                 range1 = int(range_split[0].split('°')[0])
                 range2 = int(range_split[1].split('°')[0])
-                ranges.append(Range(market.get("ticker"), range1, range2, market.get("yes_ask") / 100))
+                ranges.append(Range(market.get("ticker"), range1, range2, market.get("yes_bid") / 100))
 
         return ranges
 
@@ -224,7 +224,7 @@ class Market:
 
         for market in markets:
             ticker = market.get("ticker")
-            price = market.get("yes_ask") / 100
+            price = market.get("yes_bid") / 100
             for r in self.ranges:
                 if r.get_ticker() == ticker:
                     r.set_price(price)
