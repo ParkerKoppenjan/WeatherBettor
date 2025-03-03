@@ -5,17 +5,18 @@ import settings
 
 selected_market = "LA"
 market = Market(selected_market)
-temp_high = weather.get_forecasted_highest_temperature(selected_market)
-current_temp = weather.get_current_temp(selected_market)
-if current_temp > temp_high:
-    temp_high = current_temp
-print("Forecasted high: " + str(temp_high))
-# makes initial bet based on forecasted high
-range = market.get_range_for_temp(temp_high)
-market.make_bet(range, settings.MAX_BET)
 
 running = True
 last_bet_price = market.get_bets()[0].get_price()
+forecasted_high = weather.get_forecasted_highest_temperature(selected_market)
+
+current_temp = weather.get_current_temp(selected_market)
+if current_temp > forecasted_high:
+    forecasted_high = current_temp
+print("Forecasted high: " + str(forecasted_high))
+# makes initial bet based on forecasted high
+range = market.get_range_for_temp(forecasted_high)
+market.make_bet(range, settings.MAX_BET)
 
 def loop():
     global running
@@ -44,13 +45,29 @@ def loop():
         last_bet_price = current_range.get_price()
 
 
-# Run loop right when the minute changes
 current_minute = time.localtime().tm_min
 while running:
+    # Run loop right when the minute changes
     if time.localtime().tm_min != current_minute:
         loop()
         current_minute = time.localtime().tm_min
-        time.sleep(0.2)
+
+    # Check forecast every 5 minutes
+    if current_minute % 5 == 0:
+        new_forecasted_high = weather.get_forecasted_highest_temperature(selected_market)
+        current_temp = weather.get_current_temp(selected_market)
+        if current_temp > new_forecasted_high:
+            new_forecasted_high = current_temp
+
+        range = market.get_range_for_temp(new_forecasted_high)
+        if new_forecasted_high != forecasted_high and range.get_high() != market.get_bets()[0].get_range().get_high():
+            print("Forecasted high changed to " + str(new_forecasted_high))
+            forecasted_high = new_forecasted_high
+            market.sell_all_bets()
+            market.make_bet(range, settings.MAX_BET)
+            last_bet_price = market.get_bets()[0].get_price
+
+    time.sleep(0.2)
 
 
 

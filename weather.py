@@ -9,7 +9,6 @@
 # Change temp based off time
 
 import requests
-import json
 from dotenv import load_dotenv
 import os
 
@@ -28,11 +27,6 @@ city_coords = {
     "CHICAGO" : (41.7868, -87.7522),
     "PHILADELPHIA" : (39.8730, -75.2437),
     "NYC" : (40.7826, -73.9656)
-}
-
-station_ids = {
-    "LA": "KLAX",
-
 }
 
 points_response_cache = {}
