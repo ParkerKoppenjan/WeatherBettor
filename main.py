@@ -26,7 +26,7 @@ while running:
     if weather.get_current_temp(selected_market) > market.get_current_bet().range.high:
         market.make_bet(market.ranges[market.get_current_bet().range.high + 1], settings.MAX_BET)
 
-    percent_profit = market.get_current_bet.range.price - market.get_current_bet.price # this works because shares add to 100 cents
+    percent_profit = market.get_current_bet.range.price - market.get_current_bet().price # this works because shares add to 100 cents
     if percent_profit > 0.25: # 25% profit
         market.sell_bet(market.get_current_bet())
         running = False

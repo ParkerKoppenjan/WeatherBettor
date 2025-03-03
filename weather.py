@@ -1,10 +1,4 @@
 # TO DO
-# Grab NWS forecasted highs from LAX, Denver, etc.
-# Grab available bets for areas on Kalshi
-# Make bets +/- 1 degree from forecasted high.
-# Available bets are usually a range of 1, so maybe bet on the averaged range closest to forecasted high?
-# Maybe spread, either over multiple temps or multiple locations
-# Analyze high periodically. If it changes, change bet.
 # Keep a log of success rates
 # Change temp based off time
 
