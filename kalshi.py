@@ -70,6 +70,8 @@ def make_signed_request_get(url):
         'KALSHI-ACCESS-TIMESTAMP': timestampt_str
     }
     response = requests.get(url, headers=headers)
+    if not response.headers.get("Content-Type").startswith("application/json"):
+        return response.text
     return response.json()
 
 def make_signed_request_post(url, data):
@@ -86,6 +88,8 @@ def make_signed_request_post(url, data):
         'KALSHI-ACCESS-TIMESTAMP': timestampt_str
     }
     response = requests.post(url, headers=headers, json=data)
+    if not response.headers.get("Content-Type").startswith("application/json"):
+        return response.text
     return response.json()
 
 class Range:
@@ -257,6 +261,9 @@ class Market:
                     r.set_price(price)
                     r.set_price_ask(price_ask)
 
+        for r in self.ranges:
+            print(f"Range: {r} has price {r.get_price()} and ask price {r.get_price_ask()}")
+
     def get_current_bet(self):
         return self.bet
 
@@ -288,6 +295,10 @@ def get_todays_weather_ticker(city):
 def get_event_for_city(city):
     url = f"https://api.elections.kalshi.com/trade-api/v2/events/{get_todays_weather_ticker(city)}"
     response = make_signed_request_get(url)
-    if response.get("error"):
-        raise ValueError("Invalid city")
+    if not isinstance(response, dict) or response.get("error") or not response.get("event"):
+        print("Incorrect response from Kalshi")
+        print(response)
+        return {
+            "event": {}
+        }
     return response

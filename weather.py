@@ -9,6 +9,7 @@
 # Change temp based off time
 
 import requests
+import json
 
 headers = {
     "User-Agent": "WeatherBettor (me@elliotjarnit.dev, parkerkoppenjan@gmail.com)"
@@ -23,6 +24,11 @@ city_coords = {
     "CHICAGO" : (41.7868, -87.7522),
     "PHILADELPHIA" : (39.8730, -75.2437),
     "NYC" : (40.7826, -73.9656)
+}
+
+station_ids = {
+    "LA": "KLAX",
+
 }
 
 points_response_cache = {}
@@ -47,11 +53,15 @@ def get_forecasted_highest_temperature(city):
 def get_current_temp(city):
     data = get_points(city)
 
-    # get the station
-    stations_url = data.get("properties").get("observationStations")
-    stations_response = requests.get(stations_url, headers=headers)
-    stations_data = stations_response.json()
-    station_id = stations_data.get("features")[0].get("properties").get("stationIdentifier")
+    station_id = None
+    if city.upper() in station_ids:
+        station_id = station_ids[city.upper()]
+    else:
+        # get the station
+        stations_url = data.get("properties").get("observationStations")
+        stations_response = requests.get(stations_url, headers=headers)
+        stations_data = stations_response.json()
+        station_id = stations_data.get("features")[0].get("properties").get("stationIdentifier")
 
     obs_url = f"https://api.weather.gov/stations/{station_id}/observations/latest"
     obs_response = requests.get(obs_url, headers=headers)
@@ -60,4 +70,7 @@ def get_current_temp(city):
     temp = obs_data.get("properties").get("temperature").get("value")  # in celsius (I HATE CELSIUS)
     if temp is not None:
         temp = round(temp * 9 / 5 + 32)  # convert to Fahrenheit
+    print(f"Current temp in {city}: {temp}")
     return temp
+
+get_current_temp("LA")
