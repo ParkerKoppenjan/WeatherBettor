@@ -13,30 +13,30 @@ temp_high = weather.get_forecasted_highest_temperature(selected_market)
 current_temp = weather.get_current_temp(selected_market)
 if current_temp > temp_high:
     temp_high = current_temp
+print("Forecasted high: " + str(temp_high))
 # makes initial bet based on forecasted high
-for r in market.ranges:
-    if r.number_in_range(temp_high):
-        market.make_bet(r, settings.MAX_BET)
-        cooldown()
-        break
+range = market.get_range_for_temp(temp_high)
+market.make_bet(range, settings.MAX_BET)
 
 while running:
     market.update_prices()
-    if weather.get_current_temp(selected_market) > market.get_current_bet().range.high:
-        market.make_bet(market.ranges[market.get_current_bet().range.high + 1], settings.MAX_BET)
-        print("Made a new bet at " + str(market.get_current_bet().range.high + 1))
+    current_bet = market.get_current_bet()
+    current_range = current_bet.get_range()
+    current_temp = weather.get_current_temp(selected_market)
+    if current_temp > current_range.get_high():
+        range_to_bet = market.get_range_for_temp(current_temp)
+        market.make_bet(range, settings.MAX_BET)
 
-    percent_profit = market.get_current_bet().range.price - market.get_current_bet().price # this works because shares add to 100 cents
+    percent_profit = current_range.get_price() - current_bet.get_price() # this works because shares add to 100 cents
     # Take profit
     if percent_profit > 0.25: # 25% profit
-        print("Sold bet at " + str(market.get_current_bet().range.high))
-        market.sell_bet(market.get_current_bet())
+        market.sell_bet(current_bet)
         running = False
     # Stop loss
     elif percent_profit < -0.50: # 50% loss
-        print("Sold bet at " + str(market.get_current_bet().range.high))
-        market.sell_bet(market.get_current_bet())
+        market.sell_bet(current_bet)
         running = False
+
     cooldown()
 
 
