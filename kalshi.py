@@ -1,3 +1,6 @@
+import math
+import uuid
+
 import requests
 from datetime import datetime
 from cryptography.hazmat.primitives import serialization
@@ -69,6 +72,22 @@ def make_signed_request_get(url):
     response = requests.get(url, headers=headers)
     return response.json()
 
+def make_signed_request_post(url, data):
+    path = url.split("https://api.elections.kalshi.com")[1]
+    current_time = datetime.now()
+    timestamp = current_time.timestamp()
+    current_time_milliseconds = int(timestamp * 1000)
+    timestampt_str = str(current_time_milliseconds)
+    msg_string = timestampt_str + "POST" + path
+    sig = sign_pss_text(private_key, msg_string)
+    headers = {
+        'KALSHI-ACCESS-KEY': access_key,
+        'KALSHI-ACCESS-SIGNATURE': sig,
+        'KALSHI-ACCESS-TIMESTAMP': timestampt_str
+    }
+    response = requests.post(url, headers=headers, json=data)
+    return response.json()
+
 class Range:
     def __init__(self, ticker, low, high, price):
         self.ticker = ticker
@@ -97,6 +116,67 @@ class Range:
     def get_ticker(self):
         return self.ticker
 
+class Bet:
+    def __init__(self, city, range, amount):
+        self.city = city
+        self.range = range
+        self.client_order_id = uuid.uuid4()
+        self.price = range.get_price()
+        self.count = math.floor(amount / self.price)
+
+        url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders"
+
+        data = {
+            "action": "buy",
+            "ticker": range.get_ticker(),
+            "side": "yes",
+            "type": "market",
+            "client_order_id": str(self.client_order_id),
+            "count": self.count,
+            "yes_price": 0,
+            "no_price": 0
+        }
+
+        response = make_signed_request_post(url, data)
+        order = response.get("order")
+        self.id = order.get("order_id")
+        self.status = order.get("status")
+
+    def check_status(self):
+        url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders/{self.id}"
+        response = make_signed_request_get(url)
+        order = response.get("order")
+        self.status = order.get("status")
+        return self.status
+
+    def __str__(self):
+        return f"{self.city}: {self.range}"
+
+    def get_status(self):
+        return self.status
+
+    def pull_out(self):
+        url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders"
+
+        data = {
+            "action": "sell",
+            "client_order_id": uuid.uuid4(),
+            "count": self.count,
+            "yes_price": 0,
+            "no_price": 0,
+            "type": "market",
+            "ticker": self.range.get_ticker(),
+            "side": "yes"
+        }
+
+        response = make_signed_request_post(url, data)
+
+        order = response.get("order")
+        if order:
+            del self
+
+        return order
+
 
 class Market:
     valid_markets = ["AUSTIN", "NYC", "DENVER", "CHICAGO", "MIAMI", "LA", "PHILADELPHIA"]
@@ -115,9 +195,9 @@ class Market:
 
         for market in markets:
             name = market.get("yes_sub_title")
-            degreeCount = name.count('°')
+            degree_count = name.count('°')
 
-            if degreeCount == 1:
+            if degree_count == 1:
                 if name.count('above') > 0:
                     ranges.append(Range(market.get("ticker"), int(name.split('°')[0]), None, market.get("yes_ask") / 100))
                 else:
@@ -141,23 +221,28 @@ class Market:
                 if r.get_ticker() == ticker:
                     r.set_price(price)
 
-    def make_bet(self, range):
-        if range not in self.ranges:
-            raise ValueError("Invalid range")
+    def get_bets(self):
+        return self.bets
 
+    def make_bet(self, range, amount):
+        if len(self.bets) > 0:
+            for bet in self.bets:
+                bet.pull_out()
 
+        bet = Bet(self.city, range, amount)
+        self.bets.append(bet)
+        return bet
 
-        self.bets.append({
-            "ticker": range.get_ticker(),
-            "price": range.get_price()
-        })
+    def sell_bet(self, bet):
+        bet.pull_out()
+        self.bets.remove(bet)
 
 
 def get_date_in_kalshi_format():
     return datetime.now().strftime('%y%b%d').upper()
 
 def get_todays_weather_ticker(city):
-    return tickers.get(city.upper()).upper() + '-' + get_date_in_kalshi_format()
+    return tickers.get(city.upper()) + '-' + get_date_in_kalshi_format()
 
 def get_event_for_city(city):
     url = f"https://api.elections.kalshi.com/trade-api/v2/events/{get_todays_weather_ticker(city)}"
