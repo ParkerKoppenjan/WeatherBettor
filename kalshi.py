@@ -1,4 +1,5 @@
 import math
+import time
 import uuid
 
 import requests
@@ -162,10 +163,20 @@ class Bet:
             print("Something went wrong while placing bet")
             print(response.get("error"))
         order = response.get("order")
-        if order:
-            print(f"Successfully placed bet for {self.city} at {self.range} for {self.count} shares at {order.get('yes_price')}")
-        self.id = order.get("order_id")
         self.status = order.get("status")
+        self.id = order.get("order_id")
+        while self.status == "resting" or self.status == "pending":
+            time.sleep(1)
+            url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders/{self.id}"
+            response = make_signed_request_get(url)
+            order = response.get("order")
+            self.status = order.get("status")
+            self.price = order.get("maker_fill_cost") / 100
+
+        print(f"Successfully placed bet for {self.city} at {self.range} for {self.count} shares at {order.get('maker_fill_cost') / 100}")
+
+
+
 
     def check_status(self):
         url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders/{self.id}"
@@ -212,6 +223,9 @@ class Bet:
     def get_price(self):
         return self.price
 
+    def get_potential_profit(self):
+        return self.count * (self.range.get_price() - self.price)
+
 
 class Market:
     valid_markets = ["AUSTIN", "NYC", "DENVER", "CHICAGO", "MIAMI", "LA", "PHILADELPHIA"]
@@ -221,7 +235,8 @@ class Market:
             raise ValueError("Invalid city")
         self.city = city
         self.ranges = self.update_ranges()
-        self.bet = None
+        self.bets = []
+
 
     def update_ranges(self):
         event = get_event_for_city(self.city)
@@ -264,26 +279,34 @@ class Market:
         for r in self.ranges:
             print(f"Range: {r} has price {r.get_price()} and ask price {r.get_price_ask()}")
 
-    def get_current_bet(self):
-        return self.bet
+    def get_bets(self):
+        return self.bets
 
     def make_bet(self, range, amount):
-        if self.bet:
-            self.bet.pull_out()
+        if len(self.bets) > 0:
+            print("Warning: Already have a bet")
 
         bet = Bet(self.city, range, amount)
-        self.bet = bet
+        self.bets.append(bet)
         return bet
 
     def sell_bet(self, bet):
         bet.pull_out()
-        self.bet = None
+        self.bets.remove(bet)
 
     def get_range_for_temp(self, temp):
         for r in self.ranges:
             if r.number_in_range(temp):
                 return r
         return None
+
+    def get_total_potential_profit(self):
+        return sum([bet.get_potential_profit() for bet in self.bets])
+
+    def sell_all_bets(self):
+        for bet in self.bets:
+            bet.pull_out()
+        self.bets = []
 
 
 def get_date_in_kalshi_format():
