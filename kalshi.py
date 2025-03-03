@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 import base64
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.exceptions import InvalidSignature
 from dotenv import load_dotenv
 import os
@@ -107,35 +107,19 @@ class Range:
     def number_in_range(self, number):
         return (self.low is None or number > self.low) and (self.high is None or number < self.high)
 
-    def set_price(self, new_price):
-        self.price = new_price
-
-    def get_price(self):
-        return self.price
-
-    def get_ticker(self):
-        return "KXUCLROUND-25BVBLIL-BVB"
-        return self.ticker
-
-    def get_low(self):
-        return self.low
-
-    def get_high(self):
-        return self.high
-
 class Bet:
     def __init__(self, city, range, amount):
         self.city = city
         self.range = range
         self.client_order_id = uuid.uuid4()
-        self.price = range.get_price()
+        self.price = range.price
         self.count = math.floor(amount / self.price)
 
         url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders"
 
         data = {
             "action": "buy",
-            "ticker": range.get_ticker(),
+            "ticker": range.ticker,
             "side": "yes",
             "type": "market",
             "client_order_id": str(self.client_order_id),
@@ -160,9 +144,6 @@ class Bet:
     def __str__(self):
         return f"{self.city}: {self.range}"
 
-    def get_status(self):
-        return self.status
-
     def pull_out(self):
         url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders"
 
@@ -173,7 +154,7 @@ class Bet:
             "yes_price": 0,
             "no_price": 0,
             "type": "market",
-            "ticker": self.range.get_ticker(),
+            "ticker": self.range.ticker,
             "side": "yes"
         }
 
@@ -226,8 +207,8 @@ class Market:
             ticker = market.get("ticker")
             price = market.get("yes_bid") / 100
             for r in self.ranges:
-                if r.get_ticker() == ticker:
-                    r.set_price(price)
+                if r.ticker == ticker:
+                    r.price = price
 
     def get_current_bet(self):
         return self.bet
