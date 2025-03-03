@@ -34,3 +34,32 @@ def get_todays_high(coordinates):
     forecast_data = forecast_response.json()
     high = forecast_data.get("properties").get("periods")[0].get("temperature")
     return high
+
+def get_current_temp(coordinates : tuple) -> int:
+    lat, long = coordinates
+    url = f"https://api.weather.gov/points/{lat},{long}"
+    response = requests.get(url, headers=headers)
+    data = response.json()
+
+    # get the station
+    stations_url = data.get("properties").get("observationStations")
+    stations_response = requests.get(stations_url, headers=headers)
+    stations_data = stations_response.json()
+    station_id = stations_data.get("features")[0].get("properties").get("stationIdentifier")
+
+    obs_url = f"https://api.weather.gov/stations/{station_id}/observations/latest"
+    obs_response = requests.get(obs_url, headers=headers)
+    obs_data = obs_response.json()
+
+    temp = obs_data.get("properties").get("temperature").get("value")  # in celsius (I HATE CELSIUS)
+    if temp is not None:
+        temp = round(temp * 9 / 5 + 32)  # convert to Fahrenheit
+    return temp
+
+def main():
+    c = city_coords.get("LA")
+    print(get_todays_high(c))
+    print(get_current_temp(c))
+
+if __name__ == "__main__":
+    main()
