@@ -32,7 +32,7 @@ def load_private_key_from_file(file_path):
         )
     return private_key
 
-def sign_pss_text(private_key: rsa.RSAPrivateKey, text: str) -> str:
+def sign_pss_text(private_key, text):
     # Before signing, we need to hash our message.
     # The hash is what we actually sign.
     # Convert the text to bytes
