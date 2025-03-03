@@ -164,6 +164,9 @@ class Bet:
             print("Something went wrong while placing bet")
             print(response.get("error"))
         order = response.get("order")
+        print("\nCurrent order status:")
+        print(json.dumps(order, indent=2))
+        print()
         self.status = order.get("status")
         self.id = order.get("order_id")
         while self.status == "resting" or self.status == "pending":
