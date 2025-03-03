@@ -25,6 +25,12 @@ city_coords = {
 
 city_stations = {
     "LA" : "KLAX",
+    "AUSTIN": "KEWX",
+    "DENVER": "KBOU",
+    "MIAMI": "KMFL",
+    "CHICAGO": "KLOT",
+    "PHILADELPHIA": "KPHI",
+    "NYC": "KOKX"
 }
 
 # Cache for API responses to reduce API calls
