@@ -6,6 +6,7 @@
 # Maybe spread, either over multiple temps or multiple locations
 # Analyze high periodically. If it changes, change bet.
 # Keep a log of success rates
+# Change temp based off time
 
 import requests
 
