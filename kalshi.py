@@ -178,9 +178,8 @@ class Bet:
             print(json.dumps(order, indent=2))
             print()
             self.status = order.get("status")
-            self.price = order.get("maker_fill_cost") / 100
 
-        print(f"Successfully placed bet for {self.city} at {self.range} for {self.count} shares at {order.get('maker_fill_cost') / 100}")
+        print(f"Successfully placed bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
 
 
 
