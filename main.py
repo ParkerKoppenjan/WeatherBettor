@@ -63,7 +63,7 @@ while running:
         print()
 
     # Check forecast every 5 minutes
-    if current_minute % 5 == 0:
+    if current_minute % 5 == 0 and time.localtime().tm_min != current_minute:
         new_forecasted_high = weather.get_forecasted_highest_temperature(selected_market)
         current_temp = weather.get_current_temp(selected_market)
         if current_temp > new_forecasted_high:
