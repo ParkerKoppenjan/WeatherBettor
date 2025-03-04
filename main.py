@@ -58,7 +58,7 @@ current_minute = time.localtime().tm_min
 while running:
     # Run loop right when the minute changes
     if time.localtime().tm_min != current_minute:
-        print(f"{selected_market} - {time.localtime().tm_min}")
+        print(f"{selected_market} - {time.strftime('%H:%M:%S', time.localtime())}")
         loop()
         print()
 
