@@ -72,7 +72,7 @@ while running:
         range = market.get_range_for_temp(new_forecasted_high)
         if new_forecasted_high != forecasted_high and range.get_high() != market.get_bets()[0].get_range().get_high():
             print("Forecasted high changed to " + str(new_forecasted_high))
-            forecasted_high = new_forecasCted_high
+            forecasted_high = new_forecasted_high
             market.sell_all_bets()
             market.make_bet(range, settings.MAX_BET)
             last_bet_price = market.get_bets()[0].get_price

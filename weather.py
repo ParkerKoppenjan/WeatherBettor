@@ -67,9 +67,6 @@ def get_forecasted_highest_temperature(city):
     high = forecast_data.get("properties").get("periods")[0].get("temperature")
     return high
 
-def kelvin_to_fahrenheit(kelvin):
-    return round((kelvin - 273.15) * (9 / 5) + 32)
-
 def get_current_temp(city):
     """
     Get the current temperature for a city using some weird mesowest API.
@@ -80,9 +77,11 @@ def get_current_temp(city):
     json = response.json()
     station = json["STATION"][0]
     observations = station["OBSERVATIONS"]
-    tempUnrounded = observations["air_temp_set_1"][-1]
-    if not isinstance(tempUnrounded, int) and not isinstance(tempUnrounded, float):
-        tempUnrounded = 0
-    temp = round(tempUnrounded)
+    temps = observations["air_temp_set_1"]
+    # Get the last temperature observation that isn't null
+    temp = None
+    for i in range(len(temps) - 1, -1, -1):
+        if temps[i] is not None:
+            temp = round(temps[i])
     print(f"Current temp in {city}: {temp}")
     return temp
