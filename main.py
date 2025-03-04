@@ -8,6 +8,11 @@ import datetime
 selected_market = "LA"
 market = Market(selected_market)
 
+print("Weather Bettor v0.1")
+print("Created by: @elliotjarnit and @ParkerKoppenjan")
+print("Starting at " + str(datetime.datetime.now()))
+print("Selected market: " + selected_market + "\n")
+
 # Get the forecasted high temperature for selected location(s)
 forecasted_high = weather.get_forecasted_highest_temperature(selected_market)
 
