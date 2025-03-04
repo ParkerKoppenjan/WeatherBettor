@@ -75,11 +75,14 @@ def get_current_temp(city):
     Get the current temperature for a city using some weird mesowest API.
     """
     station = city_stations[city.upper()]
-    url = f"https://api.mesowest.net/v2/stations/timeseries?STID={station}&showemptystations=1&units=temp|F,speed|mph,english&recent=60&token=d8c6aee36a994f90857925cea26934be&complete=1&obtimezone=local"
+    url = f"https://api.mesowest.net/v2/stations/timeseries?STID={station}&showemptystations=1&units=temp|F,speed|mph,english&recent=60&token=95727a10ba0443c9bd8c15a6ccaed2d6&complete=1&obtimezone=local"
     response = requests.get(url, headers=headers)
     json = response.json()
     station = json["STATION"][0]
     observations = station["OBSERVATIONS"]
-    temp = round(observations["air_temp_set_1"][-1])
+    tempUnrounded = observations["air_temp_set_1"][-1]
+    if not isinstance(tempUnrounded, int) and not isinstance(tempUnrounded, float):
+        tempUnrounded = 0
+    temp = round(tempUnrounded)
     print(f"Current temp in {city}: {temp}")
     return temp

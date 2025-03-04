@@ -2,13 +2,12 @@ import time
 import weather
 from kalshi import Market
 import settings
+import datetime
 
 # Set up the market to bet on (Los Angeles at this time, will be expanded)
 selected_market = "LA"
 market = Market(selected_market)
 
-running = True
-last_bet_price = market.get_bets()[-1].get_price()
 # Get the forecasted high temperature for selected location(s)
 forecasted_high = weather.get_forecasted_highest_temperature(selected_market)
 
@@ -21,7 +20,8 @@ print("Forecasted high: " + str(forecasted_high))
 range = market.get_range_for_temp(forecasted_high)
 market.make_bet(range, settings.MAX_BET)
 
-
+running = True
+last_bet_price = market.get_bets()[-1].get_price()
 
 def loop():
     """
@@ -56,11 +56,11 @@ def loop():
 
 current_minute = time.localtime().tm_min
 while running:
-    print(f"{selected_market} - {time.localtime().tm_hour}:{time.localtime().tm_min}")
     # Run loop right when the minute changes
     if time.localtime().tm_min != current_minute:
+        print(f"{selected_market} - {time.localtime().tm_min}")
         loop()
-        current_minute = time.localtime().tm_min
+        print()
 
     # Check forecast every 5 minutes
     if current_minute % 5 == 0:
@@ -72,13 +72,13 @@ while running:
         range = market.get_range_for_temp(new_forecasted_high)
         if new_forecasted_high != forecasted_high and range.get_high() != market.get_bets()[0].get_range().get_high():
             print("Forecasted high changed to " + str(new_forecasted_high))
-            forecasted_high = new_forecasted_high
+            forecasted_high = new_forecasCted_high
             market.sell_all_bets()
             market.make_bet(range, settings.MAX_BET)
             last_bet_price = market.get_bets()[0].get_price
 
-    print()
-    time.sleep(1)
+    current_minute = time.localtime().tm_min
+    time.sleep(0.5)
 
 
 
