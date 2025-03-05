@@ -41,12 +41,19 @@ def loop():
     current_temp = weather.get_current_temp(selected_market)
     current_price = current_range.get_price() #  so we don't have to call this every time
 
+    # If high is reached before 11am, move to the next range
+    if datetime.datetime.now().hour < 11 and current_temp == current_range.get_high():
+        market.sell_all_bets()
+        range_to_bet = market.get_range_for_temp(current_temp + 1)
+        market.make_bet(range_to_bet, settings.MAX_BET)
+        last_bet_price = market.get_bets()[-1].get_price()
+
     # If the current temp is higher than the current range, sell all bets and make a bet in the new range
     if current_temp > current_range.get_high():
         range_to_bet = market.get_range_for_temp(current_temp)
         market.sell_all_bets()
         market.make_bet(range_to_bet, settings.MAX_BET)
-        last_bet_price = market.get_bets()[0].get_price()
+        last_bet_price = market.get_bets()[-1].get_price()
 
     # If the current price is higher than 0.95, sell all bets and stop the loop
     if current_price > 0.95:
