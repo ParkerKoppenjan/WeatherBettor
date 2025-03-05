@@ -69,19 +69,41 @@ def get_forecasted_highest_temperature(city):
 
 def get_current_temp(city):
     """
-    Get the current temperature for a city using some weird mesowest API.
+    Get the current temperature for a city using some weird Mesowest API (or Open-METAR if it fails).
     """
     station = city_stations[city.upper()]
     url = f"https://api.mesowest.net/v2/stations/timeseries?STID={station}&showemptystations=1&units=temp|F,speed|mph,english&recent=60&token=95727a10ba0443c9bd8c15a6ccaed2d6&complete=1&obtimezone=local"
     response = requests.get(url, headers=headers)
-    json = response.json()
-    station = json["STATION"][0]
-    observations = station["OBSERVATIONS"]
-    temps = observations["air_temp_set_1"]
-    # Get the last temperature observation that isn't null
-    temp = None
-    for i in range(len(temps) - 1, -1, -1):
-        if temps[i] is not None:
-            temp = round(temps[i])
-    print(f"Current temp in {city}: {temp}")
-    return temp
+    if response.status_code == 200:
+        json = response.json()
+        station = json["STATION"][0]
+        observations = station["OBSERVATIONS"]
+        temps = observations["air_temp_set_1"]
+        # Get the last temperature observation that isn't null
+        temp = None
+        for i in range(len(temps) - 1, -1, -1):
+            if temps[i] is not None:
+                temp = round(temps[i])
+                break
+        print(f"Current temp in {city}: {temp}")
+        return temp
+    else:
+        print(f"Error getting current temp in {city} from MesoWest API, trying backup Open-METAR API.")
+        url = f"https://aviationweather.gov/api/data/metar?ids={station}&format=json"
+        response = requests.get(url)
+        if response.status_code == 200:
+            json = response.json()
+            station= json[0]
+            temps = [station["temp"]]
+
+            temp = None
+            for i in range(len(temps) - 1, -1, -1):
+                if temps[i] is not None:
+                    temp = (temps[i] * 9/5) + 32
+                    temp = round(temp)
+                    break
+            print(f"Current temp in {city}: {temp}")
+            return temp
+        else:
+            print(f"Error getting current temp in {city} from Open-METAR API.")
+            return None
