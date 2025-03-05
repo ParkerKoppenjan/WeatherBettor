@@ -87,7 +87,7 @@ while running:
             forecasted_high = new_forecasted_high
             market.sell_all_bets()
             market.make_bet(range, settings.MAX_BET)
-            last_bet_price = market.get_bets()[0].get_price
+            last_bet_price = market.get_bets()[-1].get_price
 
     current_minute = time.localtime().tm_min
     time.sleep(0.5)
