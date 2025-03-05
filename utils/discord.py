@@ -15,6 +15,10 @@ def send_webhook(event, message):
         color = 0x7CFC00
     elif event == "Bet Sold":
         color = 0xFF5733
+    elif event == "Bot Crashed":
+        color = 0x8B0000
+    elif event == "Bot Started":
+        color = 0x00FF00
 
     body = {
         "content": "",
