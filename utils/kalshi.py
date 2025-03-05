@@ -2,6 +2,7 @@ import json
 import math
 import time
 import uuid
+import discord
 
 import requests
 from datetime import datetime
@@ -235,8 +236,7 @@ class Bet:
             self.status = order.get("status")
 
         print(f"Successfully placed bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
-
-
+        discord.send_webhook("Bet Placed", f"Bet placed for {self.city} at {self.range} for {self.count} shares at {self.price}")
 
 
     def check_status(self):
@@ -286,6 +286,7 @@ class Bet:
         order = response.get("order")
         if order:
             print(f"Successfully pulled out of {self.city} at {self.range} for {self.count} shares at {order.get('yes_price')}")
+            discord.send_webhook("Bet Sold", f"Bet sold for {self.city} at {self.range} for {self.count} shares at {order.get('yes_price')}")
             del self
 
         return order

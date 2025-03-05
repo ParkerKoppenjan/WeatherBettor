@@ -1,23 +1,27 @@
 import time
-import weather
-from kalshi import Market
-import settings
 import datetime
-
-# Set up the market to bet on (Los Angeles at this time, will be expanded)
-selected_market = "LA"
-market = Market(selected_market)
+import utils.weather as weather
+import utils.discord as discord
+from utils.kalshi import Market
+import settings
 
 print("Weather Bettor v0.1")
 print("Created by: @elliotjarnit and @ParkerKoppenjan")
 print("Starting at " + str(datetime.datetime.now()))
-print("Selected market: " + selected_market + "\n")
+print("Selected market: " + settings.SELECTED_MARKET + "\n")
+
+
+
+
+
+# Set up the market to bet on (Los Angeles at this time, will be expanded)
+market = Market(settings.SELECTED_MARKET)
 
 # Get the forecasted high temperature for selected location(s)
-forecasted_high = weather.get_forecasted_highest_temperature(selected_market)
+forecasted_high = weather.get_forecasted_highest_temperature(settings.SELECTED_MARKET)
 
 # Update forecasted high if current temperature is higher
-current_temp = weather.get_current_temp(selected_market)
+current_temp = weather.get_current_temp(settings.SELECTED_MARKET)
 if current_temp > forecasted_high:
     forecasted_high = current_temp
 print("Forecasted high: " + str(forecasted_high))
@@ -27,6 +31,7 @@ market.make_bet(range, settings.MAX_BET)
 
 running = True
 last_bet_price = market.get_bets()[-1].get_price()
+last_temp = current_temp
 
 def loop():
     """
@@ -34,12 +39,17 @@ def loop():
     """
     global running
     global last_bet_price
+    global last_temp
 
     market.update_prices()
     bets = market.get_bets()
     current_range = bets[-1].get_range()
-    current_temp = weather.get_current_temp(selected_market)
+    current_temp = weather.get_current_temp(settings.SELECTED_MARKET)
     current_price = current_range.get_price() #  so we don't have to call this every time
+
+    if current_temp != last_temp:
+        discord.send_webhook("Temperature Change", f"Temperature changed to {current_temp}°F")
+        last_temp = current_temp
 
     # If high is reached before 11am, move to the next range
     if datetime.datetime.now().hour < 11 and current_temp == current_range.get_high():
@@ -70,14 +80,14 @@ current_minute = time.localtime().tm_min
 while running:
     # Run loop right when the minute changes
     if time.localtime().tm_min != current_minute:
-        print(f"{selected_market} - {time.strftime('%H:%M:%S', time.localtime())}")
+        print(f"{settings.SELECTED_MARKET} - {time.strftime('%H:%M:%S', time.localtime())}")
         loop()
         print()
 
     # Check forecast every 5 minutes
     if current_minute % 5 == 0 and time.localtime().tm_min != current_minute:
-        new_forecasted_high = weather.get_forecasted_highest_temperature(selected_market)
-        current_temp = weather.get_current_temp(selected_market)
+        new_forecasted_high = weather.get_forecasted_highest_temperature(settings.SELECTED_MARKET)
+        current_temp = weather.get_current_temp(settings.SELECTED_MARKET)
         if current_temp > new_forecasted_high:
             new_forecasted_high = current_temp
 
