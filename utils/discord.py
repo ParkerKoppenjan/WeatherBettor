@@ -30,8 +30,8 @@ def send_webhook(event, message):
                 "description": message,
                 "color": color,
                 "fields": [],
-                # Now in ISO 8601 format
-                "timestamp": datetime.datetime.now().isoformat(),
+                # Now in ISO 8601 format in correct timezone
+                "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
             }
         ],
         "components": [],
