@@ -8,6 +8,9 @@ import os
 
 load_dotenv()
 
+
+TOMORROW_IO_API_KEY = os.getenv("TOMORROW_IO_API_KEY")
+
 headers = {
     "User-Agent": "WeatherBettor (me@elliotjarnit.dev, parkerkoppenjan@gmail.com)"
 }
@@ -69,19 +72,58 @@ def get_forecasted_highest_temperature(city):
 
 def get_current_temp(city):
     """
-    Get the current temperature for a city using some weird mesowest API.
+    Get the current temperature for a city using some weird Mesowest API (or Tomorrow.io, or Open-METAR, if failure).
     """
-    station = city_stations[city.upper()]
+    station = city_stations.get(city.upper())
+
+    # Primary: Mesowest API
     url = f"https://api.mesowest.net/v2/stations/timeseries?STID={station}&showemptystations=1&units=temp|F,speed|mph,english&recent=60&token=95727a10ba0443c9bd8c15a6ccaed2d6&complete=1&obtimezone=local"
     response = requests.get(url, headers=headers)
-    json = response.json()
-    station = json["STATION"][0]
-    observations = station["OBSERVATIONS"]
-    temps = observations["air_temp_set_1"]
-    # Get the last temperature observation that isn't null
-    temp = None
-    for i in range(len(temps) - 1, -1, -1):
-        if temps[i] is not None:
-            temp = round(temps[i])
-    print(f"Current temp in {city}: {temp}")
-    return temp
+
+    if response.status_code == 200:
+        json = response.json()
+        station_data = json["STATION"][0]
+        observations = station_data["OBSERVATIONS"]
+        temps = observations["air_temp_set_1"]
+
+        # Get the last temperature observation that isn't null
+        temp = None
+        for i in range(len(temps) - 1, -1, -1):
+            if temps[i] is not None:
+                temp = round(temps[i])
+                break
+        print(f"Current temp in {city}: {temp}")
+        return temp
+
+    print(f"Error getting current temp in {city} from Mesowest API, trying backup Tomorrow.io API.")
+
+    # Backup: Tomorrow.io API
+    if TOMORROW_IO_API_KEY:
+        url = f"https://api.tomorrow.io/v4/weather/realtime?location={city_coords[city.upper()][0]},{city_coords[city.upper()][1]}&units=imperial&apikey={TOMORROW_IO_API_KEY}"
+        response = requests.get(url)
+        if response.status_code == 200:
+            json = response.json()
+            temp = json["data"]["values"]["temperature"]
+            print(f"Current temp in {city}: {temp}")
+            return temp
+        else:
+            print(f"Error getting current temp in {city} from Tomorrow.io API, trying Open-METAR API.")
+
+    # Final Backup: Open-METAR API
+    url = f"https://aviationweather.gov/api/data/metar?ids={station}&format=json"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        json = response.json()
+        station_data = json[0]
+        temp_celsius = station_data.get("temp")
+
+        if temp_celsius is not None:
+            temp = round((temp_celsius * 9/5) + 32)  # Convert °C to °F
+            print(f"Current temp in {city}: {temp}")
+            return temp
+
+    print(f"Error getting current temp in {city} from all sources.")
+    return None
+
+
