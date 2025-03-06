@@ -393,7 +393,7 @@ class Market:
     def get_bets(self):
         return self.bets
 
-    def make_bet(self, range, amount, yes_or_no = "yes"):
+    def make_bet(self, range, amount, bet_type = True):
         if len(self.bets) > 0:
             print("Warning: Already have a bet")
 
@@ -407,7 +407,7 @@ class Market:
 
         bet = None
         try :
-            bet = Bet(self.city, range, amount, yes_or_no)
+            bet = Bet(self.city, range, amount, bet_type)
         except:
             return None
         self.bets.append(bet)
