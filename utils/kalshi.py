@@ -185,7 +185,7 @@ class Bet:
       Represents a bet placed on Kalshi for a specific temperature range.
       Handles the creation and management of orders on the Kalshi platform.
     """
-    def __init__(self, city, range, amount):
+    def __init__(self, city, range, amount, bet_type = True):
         """
         Initialize and place a new bet.
 
@@ -199,6 +199,7 @@ class Bet:
         self.client_order_id = str(uuid.uuid4())
         self.price = max(range.get_price_ask(), 0.01)
         self.count = math.floor(amount / self.price)
+        self.bet_type = bet_type
 
         print(f"Making bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
 
@@ -207,7 +208,7 @@ class Bet:
         data = {
             "action": "buy",
             "ticker": range.get_ticker(),
-            "side": "yes",
+            "side": "yes" if self.bet_type else "no",
             "type": "market",
             "client_order_id": self.client_order_id,
             "count": self.count,
@@ -340,7 +341,6 @@ class Market:
         self.ranges = self.update_ranges()
         self.bets = []
 
-
     def update_ranges(self):
         """
         Update the available temperature ranges for this market from Kalshi.
@@ -393,7 +393,7 @@ class Market:
     def get_bets(self):
         return self.bets
 
-    def make_bet(self, range, amount):
+    def make_bet(self, range, amount, yes_or_no = "yes"):
         if len(self.bets) > 0:
             print("Warning: Already have a bet")
 
@@ -407,7 +407,7 @@ class Market:
 
         bet = None
         try :
-            bet = Bet(self.city, range, amount)
+            bet = Bet(self.city, range, amount, yes_or_no)
         except:
             return None
         self.bets.append(bet)
