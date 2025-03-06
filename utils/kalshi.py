@@ -2,7 +2,7 @@ import json
 import math
 import time
 import uuid
-import discord
+from utils import discord
 
 import requests
 from datetime import datetime
