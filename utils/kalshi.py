@@ -219,24 +219,34 @@ class Bet:
         if response.get("error"):
             print("Something went wrong while placing bet")
             print(response.get("error"))
+            discord.send_webhook("Error Placing Bet", f"Error placing bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
+            raise ValueError("Error placing bet")
+
         order = response.get("order")
         print("\nCurrent order status:")
         print(json.dumps(order, indent=2))
         print()
-        self.status = order.get("status")
-        self.id = order.get("order_id")
-        while self.status == "resting" or self.status == "pending":
-            time.sleep(1)
-            url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders/{self.id}"
-            response = make_signed_request_get(url)
-            order = response.get("order")
-            print("\nCurrent order status:")
-            print(json.dumps(order, indent=2))
-            print()
+        try:
             self.status = order.get("status")
+            self.id = order.get("order_id")
+            while self.status == "resting" or self.status == "pending":
+                time.sleep(1)
+                url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders/{self.id}"
+                response = make_signed_request_get(url)
+                order = response.get("order")
+                print("\nCurrent order status:")
+                print(json.dumps(order, indent=2))
+                print()
+                self.status = order.get("status")
 
-        print(f"Successfully placed bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
-        discord.send_webhook("Bet Placed", f"Bet placed for {self.city} at {self.range} for {self.count} shares at {self.price}")
+            print(f"Successfully placed bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
+            discord.send_webhook("Bet Placed", f"Bet placed for {self.city} at {self.range} for {self.count} shares at {self.price}")
+        except:
+            print("Error placing bet")
+            print(response)
+            discord.send_webhook("Error Placing Bet", f"Error placing bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
+            raise ValueError("Error placing bet")
+
 
 
     def check_status(self):
@@ -282,14 +292,22 @@ class Bet:
         if response.get("error"):
             print("Something went wrong while pulling out")
             print(response.get("error"))
+            discord.send_webhook("Error Selling Bet", f"Error selling bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
+            return None
 
-        order = response.get("order")
-        if order:
-            print(f"Successfully pulled out of {self.city} at {self.range} for {self.count} shares at {order.get('yes_price')}")
-            discord.send_webhook("Bet Sold", f"Bet sold for {self.city} at {self.range} for {self.count} shares at {order.get('yes_price')}")
-            del self
+        try:
+            order = response.get("order")
+            if order:
+                print(f"Successfully pulled out of {self.city} at {self.range} for {self.count} shares at {order.get('yes_price')}")
+                discord.send_webhook("Bet Sold", f"Bet sold for {self.city} at {self.range} for {self.count} shares at {order.get('yes_price')}")
+                del self
 
-        return order
+            return order
+        except:
+            print("Error selling bet")
+            print(response)
+            discord.send_webhook("Error Selling Bet", f"Error selling bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
+            return None
 
     def get_range(self):
         return self.range
@@ -387,12 +405,19 @@ class Market:
             print("Warning: Price is too high")
             return None
 
-        bet = Bet(self.city, range, amount)
+        bet = None
+        try :
+            bet = Bet(self.city, range, amount)
+        except:
+            return None
         self.bets.append(bet)
         return bet
 
     def sell_bet(self, bet):
-        bet.pull_out()
+        try:
+            bet.pull_out()
+        except:
+            return
         self.bets.remove(bet)
 
     def get_range_for_temp(self, temp):
