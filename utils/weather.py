@@ -123,13 +123,21 @@ def get_current_temp_from_wethr(city):
 
     if latest_observation.get("cli_high_fahrenheit") and latest_observation.get("dsm_high_fahrenheit"):
         temp = max(latest_observation.get("cli_high_fahrenheit"), latest_observation.get("dsm_high_fahrenheit"))
+        print("CLI TEMP")
+        discord.send_webhook("CLI TEMP", f"CLI: {latest_observation.get('cli_high_fahrenheit')}\nDSM: {latest_observation.get('dsm_high_fahrenheit')}\nMax: {temp}")
         return temp
 
     if latest_observation.get("cli_high_fahrenheit"):
-        return latest_observation.get("cli_high_fahrenheit")
+        temp = latest_observation.get("cli_high_fahrenheit")
+        print("CLI TEMP")
+        discord.send_webhook("CLI TEMP", f"CLI: {latest_observation.get('cli_high_fahrenheit')}")
+        return temp
 
     if latest_observation.get("dsm_high_fahrenheit"):
-        return latest_observation.get("dsm_high_fahrenheit")
+        temp = latest_observation.get("dsm_high_fahrenheit")
+        print("CLI TEMP")
+        discord.send_webhook("CLI TEMP", f"DSM: {latest_observation.get('dsm_high_fahrenheit')}")
+        return temp
 
     if latest_observation.get("highest_possible"):
         return latest_observation.get("highest_possible")
