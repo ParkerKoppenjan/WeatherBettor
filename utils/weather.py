@@ -42,6 +42,7 @@ city_stations = {
 points_response_cache = {}
 token_cache = None
 cookie_cache = None
+temperature_cache = 0
 
 def get_points(city, force = False):
     """
@@ -95,7 +96,7 @@ def get_forecasted_highest_temperature(city):
     high = forecast_data.get("properties").get("periods")[0].get("temperature")
     return high
 
-def get_current_temp(city):
+def get_current_temp_from_wethr(city):
     global token_cache
 
     if token_cache is None:
@@ -138,6 +139,14 @@ def get_current_temp(city):
 
     return None
 
+def get_current_temp(city):
+    global temperature_cache
+    temp = get_current_temp_from_wethr(city)
+    if temp is None:
+        return temperature_cache
+    temperature_cache = temp
+    print(f"Current temp in {city}: {temp}")
+    return temp
 
 # def get_current_temp(city):
 #     """
