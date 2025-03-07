@@ -451,3 +451,16 @@ def get_event_for_city(city):
             "event": {}
         }
     return response
+
+def get_account_balance():
+    """Retrieves the available balance from the Kalshi API."""
+
+    url = "https://api.elections.kalshi.com/trade-api/v2/trader/wallet"
+    response = make_signed_request_get(url)
+
+    if isinstance(response, dict) and "available_funds" in response:
+        return response["available_funds"]
+    else:
+        print("Error retrieving account balance")
+        print(response)
+        return None

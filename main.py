@@ -3,7 +3,7 @@ import datetime
 import utils.weather as weather
 import utils.discord as discord
 from algorithms.original import OriginalAlgorithm
-from utils.kalshi import Market
+from utils.kalshi import Market, get_account_balance
 import settings
 
 def main():
@@ -12,6 +12,7 @@ def main():
     print("Starting at " + str(datetime.datetime.now()))
     print("Selected market: " + settings.SELECTED_MARKET + "\n")
     print("Algorithm: " + settings.ALGORITHM.NAME + " " + settings.ALGORITHM.VERSION)
+    original_balance = get_account_balance()
 
     discord.send_webhook("Bot Started",
                          "Bot started successfully on " + settings.SELECTED_MARKET + "\n" +
@@ -36,7 +37,11 @@ def main():
 
         time.sleep(0.5)
 
-
+    final_balance = get_account_balance()
+    earnings = final_balance - original_balance
+    percent_profit = ((final_balance - original_balance) / original_balance * 100)
+    print(f"Profit Today: {earnings}, or a {percent_profit}% change in account balance")
+    discord.send_webhook("Profit Today", f"Profit Today: {earnings}, or a {percent_profit}% change in account balance")
 if __name__ == '__main__':
     try:
         main()

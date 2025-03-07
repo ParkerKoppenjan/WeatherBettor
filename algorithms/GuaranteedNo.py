@@ -39,9 +39,10 @@ class GuaranteedNoAlgorithm(Algorithm):
                         cheapest_range = r
 
                 if cheapest_range.get_price() < 0.95:  # Makes sure price is low enough to make any money
-                    market.make_bet(cheapest_range, settings.MAX_BET, False)
-                    current_betting_range = cheapest_range
-                    self.last_bet_price = market.get_bets()[-1].get_price()
+                    if market.make_bet(cheapest_range, settings.MAX_BET, False): # confirms the bet goes through properly
+                        current_betting_range = cheapest_range
+                        self.last_bet_price = market.get_bets()[-1].get_price()
                 elif current_betting_range.get_price() < self.last_bet_price - 0.1: # If the price has dropped by at least 10 cents, make a new bet on the same range
-                    market.make_bet(current_betting_range, settings.MAX_BET, False)
-                    self.last_bet_price = current_betting_range.get_price()
+                    if market.make_bet(current_betting_range, settings.MAX_BET, False):
+                        current_betting_range = cheapest_range
+                        self.last_bet_price = current_betting_range.get_price()
