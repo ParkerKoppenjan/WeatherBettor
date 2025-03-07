@@ -2,9 +2,8 @@ from algorithms import Algorithm
 from utils import discord, weather
 import settings
 
-
 class GuaranteedNoAlgorithm(Algorithm):
-    NAME = "GUARANTEED NO ALGORITHM"
+    NAME = "Guaranteed No Algorithm"
     VERSION = "0.1"
     LOOP_INTERVAL = 60
 
