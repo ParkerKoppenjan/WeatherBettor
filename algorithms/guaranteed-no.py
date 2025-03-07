@@ -11,9 +11,11 @@ class GuaranteedNoAlgorithm(Algorithm):
         self.last_bet_price = None
         self.available_ranges = None
         self.max_temp = None  # Highest temp seen thus far (irrespective of forecasts)
+        self.last_temp = 0
 
     def init(self, market):
         self.available_ranges = market.get_ranges()
+        self.last_temp = weather.get_current_temp(market.city)
 
     def loop(self, market):
         market.update_prices()
@@ -24,6 +26,10 @@ class GuaranteedNoAlgorithm(Algorithm):
         # Update max temperature
         if self.max_temp is None or current_temp > self.max_temp:
             self.max_temp = current_temp
+
+        if current_temp != self.last_temp:
+            discord.send_webhook("Temperature Change", f"Temperature changed to {current_temp}°F")
+            self.last_temp = current_temp
 
         if not current_betting_range:  # If there are no bets, see if we can make one
             potential_ranges = []
