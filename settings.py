@@ -1,5 +1,5 @@
-from algorithms.original import OriginalAlgorithm
+from algorithms.guaranteed_no import GuaranteedNoAlgorithm
 
-ALGORITHM = OriginalAlgorithm
+ALGORITHM = GuaranteedNoAlgorithm
 MAX_BET = 5
 SELECTED_MARKET = "LA"
