@@ -1,3 +1,4 @@
+import math
 import time
 import datetime
 import utils.weather as weather
@@ -29,6 +30,9 @@ def main():
     algorithm.init(market)
 
     last_run = time.time()
+    while last_run % algorithm.LOOP_INTERVAL != 0:
+        last_run = math.floor(time.time())
+
     while algorithm.running:
         seconds_since_epoch = time.time()
         if (seconds_since_epoch - last_run) > settings.ALGORITHM.LOOP_INTERVAL:
