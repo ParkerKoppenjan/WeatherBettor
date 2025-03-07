@@ -46,3 +46,8 @@ class GuaranteedNoAlgorithm(Algorithm):
                     if market.make_bet(current_betting_range, settings.MAX_BET, False):
                         current_betting_range = cheapest_range
                         self.last_bet_price = current_betting_range.get_price()
+        else:
+            # Sell at 99 cents
+            if current_betting_range.get_price() > 0.99:
+                market.sell_all_bets()
+                current_betting_range = None
