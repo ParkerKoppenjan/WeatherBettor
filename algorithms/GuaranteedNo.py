@@ -39,6 +39,7 @@ class GuaranteedNoAlgorithm(Algorithm):
                         cheapest_range = r
 
                 if cheapest_range.get_price() < 0.95:  # Makes sure price is low enough to make any money
+                    discord.send_webhook(f"Market Lag Spotted at Range {str(cheapest_range)}", "Swooping in for easy money...")
                     if market.make_bet(cheapest_range, settings.MAX_BET, False): # confirms the bet goes through properly
                         current_betting_range = cheapest_range
                         self.last_bet_price = market.get_bets()[-1].get_price()
