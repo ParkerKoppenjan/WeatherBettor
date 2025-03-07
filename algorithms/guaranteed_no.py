@@ -16,6 +16,7 @@ class GuaranteedNoAlgorithm(Algorithm):
     def init(self, market):
         self.available_ranges = market.get_ranges()
         self.last_temp = weather.get_current_temp(market.city)
+        self.max_temp = self.last_temp
 
     def loop(self, market):
         market.update_prices()
@@ -24,7 +25,7 @@ class GuaranteedNoAlgorithm(Algorithm):
         current_temp = weather.get_current_temp(market.city)
 
         # Update max temperature
-        if self.max_temp is None or current_temp > self.max_temp:
+        if current_temp > self.max_temp:
             self.max_temp = current_temp
 
         if current_temp != self.last_temp:
@@ -34,7 +35,7 @@ class GuaranteedNoAlgorithm(Algorithm):
         if not current_betting_range:  # If there are no bets, see if we can make one
             potential_ranges = []
             for r in self.available_ranges:
-                if self.max_temp > r.get_high():  # If the high of a range has already been exceeded
+                if r.get_high() and self.max_temp > r.get_high():  # If the high of a range has already been exceeded
                     potential_ranges.append(r)
 
             if potential_ranges:  # Check if we have any viable ranges

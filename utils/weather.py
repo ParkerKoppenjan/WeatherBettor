@@ -10,6 +10,14 @@ headers = {
     "User-Agent": "WeatherBettor (me@elliotjarnit.dev, parkerkoppenjan@gmail.com)"
 }
 
+token_cache = None
+cookie_cache = None
+
+fake_headers = {
+    "Referer": "https://wethr.net/market/losangeles",
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+}
+
 # Geographic coordinates for each city where bets can be placed (not always airport)
 city_coords = {
     "LA" : (33.9422,-118.4036),
@@ -33,8 +41,6 @@ city_stations = {
 
 # Cache for API responses to reduce API calls
 points_response_cache = {}
-token_cache = None
-cookie_cache = None
 temperature_cache = 0
 
 def get_points(city, force = False):
@@ -64,7 +70,7 @@ def refresh_wethr_token():
     global token_cache
     global cookie_cache
 
-    html_req = requests.get("https://wethr.net/market/losangeles")
+    html_req = requests.get("https://wethr.net/market/losangeles", headers=fake_headers)
     html = html_req.text
 
     token_index = html.find("const API_TOKEN = '")
@@ -101,11 +107,9 @@ def get_current_temp_from_wethr(city):
     station = city_stations.get(city.upper())
 
     url = f"https://wethr.net/backend/fetch_asos_data.php?station={station}&date={date}&timezone=America/Los_Angeles&token={token_cache}"
-    response = requests.get(url, headers={
-        "Cookie": cookie_cache,
-        "Referer": "https://wethr.net/market/losangeles",
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
-    })
+    headers = fake_headers
+    headers["Cookie"] = cookie_cache
+    response = requests.get(url, headers=headers)
 
     if response.status_code != 200:
         refresh_wethr_token()

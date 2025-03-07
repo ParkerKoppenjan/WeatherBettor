@@ -438,6 +438,9 @@ class Market:
             bet.pull_out(limit)
         self.bets = []
 
+    def get_ranges(self):
+        return self.ranges
+
 
 def get_date_in_kalshi_format():
     return datetime.now().strftime('%y%b%d').upper()
@@ -458,12 +461,12 @@ def get_event_for_city(city):
 
 def get_account_balance():
     """Retrieves the available balance from the Kalshi API."""
-
-    url = "https://api.elections.kalshi.com/trade-api/v2/trader/wallet"
+    url = "https://api.elections.kalshi.com/trade-api/v2/portfolio/balance"
     response = make_signed_request_get(url)
+    print(response)
 
-    if isinstance(response, dict) and "available_funds" in response:
-        return response["available_funds"]
+    if isinstance(response, dict) and "balance" in response:
+        return response["balance"] / 100
     else:
         print("Error retrieving account balance")
         print(response)
