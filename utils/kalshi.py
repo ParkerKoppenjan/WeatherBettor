@@ -201,7 +201,7 @@ class Bet:
         self.count = math.floor(amount / self.price)
         self.bet_type = bet_type
 
-        print(f"Making bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
+        print(f"Making {"YES" if self.bet_type else "NO"} bet at {self.range} for {self.count} shares at {self.price}")
 
         url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders"
 
@@ -220,7 +220,7 @@ class Bet:
         if response.get("error"):
             print("Something went wrong while placing bet")
             print(response.get("error"))
-            discord.send_webhook("Error Placing Bet", f"Error placing bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
+            discord.send_webhook("Error Placing Bet", f"Error placing {"YES" if self.bet_type else "NO"} bet at {self.range} for {self.count} shares at {self.price}")
             raise ValueError("Error placing bet")
 
         order = response.get("order")
@@ -240,12 +240,12 @@ class Bet:
                 print()
                 self.status = order.get("status")
 
-            print(f"Successfully placed bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
-            discord.send_webhook("Bet Placed", f"Bet placed for {self.city} at {self.range} for {self.count} shares at {self.price}")
+            print(f"Successfully placed {"YES" if self.bet_type else "NO"} bet at {self.range} for {self.count} shares at {self.price}")
+            discord.send_webhook("Bet Placed", f"Bet {"YES" if self.bet_type else "NO"} placed at {self.range} for {self.count} shares at {self.price}")
         except:
             print("Error placing bet")
             print(response)
-            discord.send_webhook("Error Placing Bet", f"Error placing bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
+            discord.send_webhook("Error Placing Bet", f"Error placing {"YES" if self.bet_type else "NO"} bet at {self.range} for {self.count} shares at {self.price}")
             raise ValueError("Error placing bet")
 
 
@@ -266,14 +266,14 @@ class Bet:
     def __str__(self):
         return f"{self.city}: {self.range}"
 
-    def pull_out(self):
+    def pull_out(self, limit = None):
         """
         Sell this bet and exit the position.
 
         Returns:
             dict: Order details from Kalshi
         """
-        print(f"Pulling out of {self.city} at {self.range} for {self.count} shares")
+        print(f"Pulling out of {"YES" if self.bet_type else "NO"} at {self.range} for {self.count} shares")
 
         url = f"https://api.elections.kalshi.com/trade-api/v2/portfolio/orders"
 
@@ -285,30 +285,34 @@ class Bet:
             "no_price": 0,
             "type": "market",
             "ticker": self.range.get_ticker(),
-            "side": "yes"
+            "side": "yes" if self.bet_type else "no"
         }
+
+        if limit:
+            data["type"] = "limit"
+            data["yes_price"] = limit * 100
+            data["no_price"] = limit * 100
 
         response = make_signed_request_post(url, data)
 
         if response.get("error"):
             print("Something went wrong while pulling out")
             print(response.get("error"))
-            discord.send_webhook("Error Selling Bet", f"Error selling bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
+            discord.send_webhook("Error Selling Bet", f"Error selling {"YES" if self.bet_type else "NO"} bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
             return None
 
         try:
             order = response.get("order")
             if order:
-                print(f"Successfully pulled out of {self.city} at {self.range} for {self.count} shares at {order.get('yes_price')}")
-                discord.send_webhook("Bet Sold", f"Bet sold for {self.city} at {self.range} for {self.count} shares at {order.get('yes_price')}")
-                del self
-
-            return order
+                print(f"Successfully pulled out of {"YES" if self.bet_type else "NO"} at {self.range} for {self.count} shares at {order.get('yes_price')}")
+                discord.send_webhook("Bet Sold", f"Bet sold for {"YES" if self.bet_type else "NO"} at {self.range} for {self.count} shares at {order.get('yes_price')}")
         except:
             print("Error selling bet")
             print(response)
-            discord.send_webhook("Error Selling Bet", f"Error selling bet for {self.city} at {self.range} for {self.count} shares at {self.price}")
+            discord.send_webhook("Error Selling Bet", f"Error selling {"YES" if self.bet_type else "NO"} bet at {self.range} for {self.count} shares at {self.price}")
             return None
+
+        del self
 
     def get_range(self):
         return self.range
@@ -429,9 +433,9 @@ class Market:
     def get_total_potential_profit(self):
         return sum([bet.get_potential_profit() for bet in self.bets])
 
-    def sell_all_bets(self):
+    def sell_all_bets(self, limit = None):
         for bet in self.bets:
-            bet.pull_out()
+            bet.pull_out(limit)
         self.bets = []
 
 
