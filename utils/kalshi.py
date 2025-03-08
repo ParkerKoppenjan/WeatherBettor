@@ -433,9 +433,9 @@ class Market:
         self.bets.append(bet)
         return bet
 
-    def sell_bet(self, bet):
+    def sell_bet(self, bet, limit = None):
         try:
-            bet.pull_out()
+            bet.pull_out(limit)
         except:
             return
         self.bets.remove(bet)
