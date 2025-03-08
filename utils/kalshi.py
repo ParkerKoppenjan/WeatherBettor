@@ -129,7 +129,7 @@ class Range:
     Represents a temperature range on Kalshi that can be bet on.
     A range can have a low bound, high bound, or both.
     """
-    def __init__(self, ticker, low, high, price, price_ask):
+    def __init__(self, ticker, low, high, yes_price, yes_price_ask, no_price, no_price_ask):
         """
         Initialize a new temperature range.
 
@@ -137,15 +137,17 @@ class Range:
             ticker (str): Kalshi ticker symbol for this range
             low (int or None): Lower bound of temperature range (None if no lower bound)
             high (int or None): Upper bound of temperature range (None if no upper bound)
-            price (float): Current bid price for this range
-            price_ask (float): Current ask price for this range
+            yes_price (float): Current bid price for this range
+            yes_price_ask (float): Current ask price for this range
+            no_price (float): Current bid price for the opposite of this range
         """
-        print(f"Creating range for {ticker} from {low} to {high} at {price} with ask price {price_ask}")
         self.ticker = ticker
         self.low = low
         self.high = high
-        self.price = price
-        self.price_ask = price_ask
+        self.yes_price = yes_price
+        self.yes_price_ask = yes_price_ask
+        self.no_price = no_price
+        self.no_price_ask = no_price_ask
 
     def __str__(self):
         if self.low is None and self.high is None:
@@ -165,17 +167,25 @@ class Range:
     def get_low(self):
         return self.low
 
-    def get_price(self):
-        return self.price
+    def get_yes_price(self):
+        return self.yes_price
 
-    def set_price(self, price):
-        self.price = price
+    def get_yes_price_ask(self):
+        return self.yes_price_ask
 
-    def set_price_ask(self, price):
-        self.price_ask = price
+    def set_yes_price(self, price, price_ask):
+        self.yes_price = price
+        self.yes_price_ask = price_ask
 
-    def get_price_ask(self):
-        return self.price_ask
+    def get_no_price(self):
+        return self.no_price
+
+    def get_no_price_ask(self):
+        return self.no_price_ask
+
+    def set_no_price(self, price, price_ask):
+        self.no_price = price
+        self.no_price_ask = price_ask
 
     def get_ticker(self):
         return self.ticker
@@ -197,7 +207,8 @@ class Bet:
         self.city = city
         self.range = range
         self.client_order_id = str(uuid.uuid4())
-        self.price = max(range.get_price_ask(), 0.01)
+        ask_price = range.get_yes_price_ask() if bet_type else range.get_no_price_ask()
+        self.price = max(ask_price, 0.01)
         self.count = math.floor(amount / self.price)
         self.bet_type = bet_type
 
@@ -321,7 +332,8 @@ class Bet:
         return self.price
 
     def get_potential_profit(self):
-        return self.count * (self.range.get_price() - self.price)
+        range_price = self.range.get_yes_price() if self.bet_type else self.range.get_no_price()
+        return self.count * (range_price - self.price)
 
 
 class Market:
@@ -359,19 +371,21 @@ class Market:
         for market in markets:
             name = market.get("yes_sub_title")
             degree_count = name.count('°')
-            price = market.get("yes_bid") / 100
-            price_ask = market.get("yes_ask") / 100
+            yes_price = market.get("yes_bid") / 100
+            yes_price_ask = market.get("yes_ask") / 100
+            no_price = market.get("no_bid") / 100
+            no_price_ask = market.get("no_ask") / 100
 
             if degree_count == 1:
                 if name.count('above') > 0:
-                    ranges.append(Range(market.get("ticker"), int(name.split('°')[0]), None, price, price_ask))
+                    ranges.append(Range(market.get("ticker"), int(name.split('°')[0]), None, yes_price, yes_price_ask, no_price, no_price_ask))
                 else:
-                    ranges.append(Range(market.get("ticker"), None, int(name.split('°')[0]), price, price_ask))
+                    ranges.append(Range(market.get("ticker"), None, int(name.split('°')[0]), yes_price, yes_price_ask, no_price, no_price_ask))
             else:
                 range_split = name.split('to')
                 range1 = int(range_split[0].split('°')[0])
                 range2 = int(range_split[1].split('°')[0])
-                ranges.append(Range(market.get("ticker"), range1, range2, price, price_ask))
+                ranges.append(Range(market.get("ticker"), range1, range2, yes_price, yes_price_ask, no_price, no_price_ask))
 
         self.ranges = ranges
         return ranges
@@ -384,28 +398,30 @@ class Market:
 
         for market in markets:
             ticker = market.get("ticker")
-            price = market.get("yes_bid") / 100
-            price_ask = market.get("yes_ask") / 100
+            yes_price = market.get("yes_bid") / 100
+            yes_price_ask = market.get("yes_ask") / 100
+            no_price = market.get("no_bid") / 100
+            no_price_ask = market.get("no_ask") / 100
             for r in self.ranges:
                 if r.get_ticker() == ticker:
-                    r.set_price(price)
-                    r.set_price_ask(price_ask)
-
-        for r in self.ranges:
-            print(f"Range: {r} has price {r.get_price()} and ask price {r.get_price_ask()}")
+                    r.set_yes_price(yes_price, yes_price_ask)
+                    r.set_no_price(no_price, no_price_ask)
 
     def get_bets(self):
         return self.bets
 
     def make_bet(self, range, amount, bet_type = True):
+        price = range.get_yes_price() if bet_type else range.get_no_price()
+        price_ask = range.get_yes_price_ask() if bet_type else range.get_no_price_ask()
+
         if len(self.bets) > 0:
             print("Warning: Already have a bet")
 
-        if range.get_price() < 0.01 or range.get_price_ask() < 0.01:
+        if price < 0.01 or price_ask < 0.01:
             print("Warning: Price is too low")
             return None
 
-        if range.get_price_ask() > 0.95:
+        if price_ask > 0.95:
             print("Warning: Price is too high")
             return None
 

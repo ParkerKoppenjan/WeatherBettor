@@ -26,7 +26,7 @@ class OriginalAlgorithm(Algorithm):
         range = market.get_range_for_temp(forecasted_high)
         market.make_bet(range, settings.MAX_BET)
 
-        self.last_bet_price = market.get_bets()[-1].get_price()
+        self.last_bet_price = market.get_bets()[-1].get_yes_price()
         self.last_temp = current_temp
 
     def loop(self, market):
@@ -34,7 +34,7 @@ class OriginalAlgorithm(Algorithm):
         bets = market.get_bets()
         current_range = bets[-1].get_range()
         current_temp = weather.get_current_temp(market.city)
-        current_price = current_range.get_price() #  so we don't have to call this every time
+        current_price = current_range.get_yes_price() #  so we don't have to call this every time
 
         if current_temp != self.last_temp:
             discord.send_webhook("Temperature Change", f"Temperature changed to {current_temp}°F")
@@ -45,14 +45,14 @@ class OriginalAlgorithm(Algorithm):
             market.sell_all_bets()
             range_to_bet = market.get_range_for_temp(current_temp + 1)
             market.make_bet(range_to_bet, settings.MAX_BET)
-            self.last_bet_price = market.get_bets()[-1].get_price()
+            self.last_bet_price = market.get_bets()[-1].get_yes_price()
 
         # If the current temp is higher than the current range, sell all bets and make a bet in the new range
         if current_temp > current_range.get_high():
             range_to_bet = market.get_range_for_temp(current_temp)
             market.sell_all_bets()
             market.make_bet(range_to_bet, settings.MAX_BET)
-            self.last_bet_price = market.get_bets()[-1].get_price()
+            self.last_bet_price = market.get_bets()[-1].get_yes_price()
 
         # If the current price is higher than 0.95, sell all bets and stop the loop
         if current_price > 0.95:

@@ -41,18 +41,17 @@ class GuaranteedNoAlgorithm(Algorithm):
             if potential_ranges:  # Check if we have any viable ranges
                 cheapest_range = potential_ranges[0]
                 for r in potential_ranges:
-                    if r.get_price() < cheapest_range.get_price():  # Get cheapest range
+                    if r.get_no_price() < cheapest_range.get_no_price():  # Get cheapest range
                         cheapest_range = r
 
-                if cheapest_range.get_price() < 0.95:  # Makes sure price is low enough to make any money
-                    discord.send_webhook(f"Market Lag Spotted at Range {str(cheapest_range)}", "Swooping in for easy money...")
+                if cheapest_range.get_no_price() < 0.95:  # Makes sure price is low enough to make any money
                     if market.make_bet(cheapest_range, settings.MAX_BET, False): # confirms the bet goes through properly
                         current_betting_range = cheapest_range
-                        self.last_bet_price = market.get_bets()[-1].get_price()
+                        self.last_bet_price = market.get_bets()[-1].get_no_price()
         else:
-            if current_betting_range.get_price() > 0.99: # Sell at 99 cents
+            if current_betting_range.get_no_price() > 0.99: # Sell at 99 cents
                 market.sell_all_bets(0.99)
                 current_betting_range = None
-            elif current_betting_range.get_price() < self.last_bet_price - 0.1: # If the price has dropped by at least 10 cents, make a new bet on the same range
+            elif current_betting_range.get_no_price() < self.last_bet_price - 0.1: # If the price has dropped by at least 10 cents, make a new bet on the same range
                 if market.make_bet(current_betting_range, settings.MAX_BET, False):
-                    self.last_bet_price = current_betting_range.get_price()
+                    self.last_bet_price = current_betting_range.get_no_price()
