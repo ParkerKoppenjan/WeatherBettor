@@ -41,7 +41,12 @@ def main():
             print()
             last_run = seconds_since_epoch
 
-        time.sleep(0.5)
+        try:
+            time.sleep(0.5)
+        except KeyboardInterrupt:
+            print("\nStopping bot gracefully...")
+            algorithm.running = False
+            break
 
     final_balance = get_account_balance()
     earnings = final_balance - original_balance
