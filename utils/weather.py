@@ -95,7 +95,7 @@ def get_forecasted_highest_temperature(city):
     high = forecast_data.get("properties").get("periods")[0].get("temperature")
     return high
 
-def get_current_temp_from_wethr(city, safe_mode = False): # safe_mode only gets minimum  or cli/dsm temp
+def get_current_temp_from_wethr(city, safe_mode = False): # safe_mode only gets minimum or cli/dsm temp
     global token_cache
 
     if token_cache is None:
