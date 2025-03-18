@@ -95,7 +95,7 @@ def get_forecasted_highest_temperature(city):
     high = forecast_data.get("properties").get("periods")[0].get("temperature")
     return high
 
-def get_current_temp_from_wethr(city, safe_mode = False): # safe_mode only gets minimum or cli/dsm temp
+def get_current_temp_from_wethr(city):
     global token_cache
 
     if token_cache is None:
@@ -118,49 +118,34 @@ def get_current_temp_from_wethr(city, safe_mode = False): # safe_mode only gets 
     json = response.json()
     latest_observation = json[-1]
 
-    if safe_mode:
-        if latest_observation.get("cli_high_fahrenheit") and latest_observation.get("dsm_high_fahrenheit"):
-            temp = min(latest_observation.get("cli_high_fahrenheit"), latest_observation.get("dsm_high_fahrenheit"))
-            print("CLI TEMP")
-            discord.send_webhook("CLI TEMP", f"CLI: {latest_observation.get('cli_high_fahrenheit')}\nDSM: {latest_observation.get('dsm_high_fahrenheit')}\nMin: {temp}")
-            return temp
-
-        elif latest_observation.get("lowest_possible"):
-            temp = latest_observation.get("lowest_possible")
-            return temp
-
-    else:
-        if latest_observation.get("cli_high_fahrenheit") and latest_observation.get("dsm_high_fahrenheit"):
-            temp = max(latest_observation.get("cli_high_fahrenheit"), latest_observation.get("dsm_high_fahrenheit"))
-            print("CLI TEMP")
-            discord.send_webhook("CLI TEMP", f"CLI: {latest_observation.get('cli_high_fahrenheit')}\nDSM: {latest_observation.get('dsm_high_fahrenheit')}\nMax: {temp}")
-            return temp
+    if latest_observation.get("cli_high_fahrenheit") and latest_observation.get("dsm_high_fahrenheit"):
+        temp = max(latest_observation.get("cli_high_fahrenheit"), latest_observation.get("dsm_high_fahrenheit"))
+        print("CLI TEMP")
+        discord.send_webhook("CLI TEMP", f"CLI: {latest_observation.get('cli_high_fahrenheit')}\nDSM: {latest_observation.get('dsm_high_fahrenheit')}\nMax: {temp}")
+        return temp
 
 
-        if latest_observation.get("cli_high_fahrenheit"):
-            temp = latest_observation.get("cli_high_fahrenheit")
-            print("CLI TEMP")
-            discord.send_webhook("CLI TEMP", f"CLI: {latest_observation.get('cli_high_fahrenheit')}")
-            return temp
+    if latest_observation.get("cli_high_fahrenheit"):
+        temp = latest_observation.get("cli_high_fahrenheit")
+        print("CLI TEMP")
+        discord.send_webhook("CLI TEMP", f"CLI: {latest_observation.get('cli_high_fahrenheit')}")
+        return temp
 
-        if latest_observation.get("dsm_high_fahrenheit"):
-            temp = latest_observation.get("dsm_high_fahrenheit")
-            print("CLI TEMP")
-            discord.send_webhook("CLI TEMP", f"DSM: {latest_observation.get('dsm_high_fahrenheit')}")
-            return temp
+    if latest_observation.get("dsm_high_fahrenheit"):
+        temp = latest_observation.get("dsm_high_fahrenheit")
+        print("CLI TEMP")
+        discord.send_webhook("CLI TEMP", f"DSM: {latest_observation.get('dsm_high_fahrenheit')}")
+        return temp
 
 
-        if latest_observation.get("highest_possible"):
-            return latest_observation.get("highest_possible")
-
-        if latest_observation.get("temperature_fahrenheit"):
-            return latest_observation.get("temperature_fahrenheit")
+    if latest_observation.get("lowest_possible"):
+        return latest_observation.get("lowest_possible")
 
     return None
 
-def get_current_temp(city, safe_mode = False):
+def get_current_temp(city):
     global temperature_cache
-    temp = get_current_temp_from_wethr(city, safe_mode)
+    temp = get_current_temp_from_wethr(city)
     if temp is None:
         return temperature_cache
     temperature_cache = temp

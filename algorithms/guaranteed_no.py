@@ -22,7 +22,7 @@ class GuaranteedNoAlgorithm(Algorithm):
         market.update_prices()
         bets = market.get_bets()
         current_betting_ranges = [bet.get_range() for bet in bets] if bets else []
-        current_temp = weather.get_current_temp(market.city, True)
+        current_temp = weather.get_current_temp(market.city)
 
         # Update max temperature
         if current_temp > self.max_temp:

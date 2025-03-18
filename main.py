@@ -30,8 +30,6 @@ def main():
     algorithm.init(market)
 
     last_run = time.time()
-    while last_run % algorithm.LOOP_INTERVAL != 0:
-        last_run = math.floor(time.time())
 
     while algorithm.running:
         seconds_since_epoch = time.time()
@@ -39,7 +37,7 @@ def main():
             print(f"{settings.SELECTED_MARKET} - {time.strftime('%H:%M:%S', time.localtime())}")
             algorithm.loop(market)
             print()
-            last_run = seconds_since_epoch
+            last_run = 60 * round(seconds_since_epoch / 60)
 
         try:
             time.sleep(0.5)
