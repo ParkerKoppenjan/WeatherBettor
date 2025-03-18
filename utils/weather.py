@@ -13,6 +13,9 @@ headers = {
 token_cache = None
 cookie_cache = None
 
+last_dsm_id = None
+last_cli_id = None
+
 fake_headers = {
     "Referer": "https://wethr.net/market/losangeles",
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
@@ -97,6 +100,8 @@ def get_forecasted_highest_temperature(city):
 
 def get_current_temp_from_wethr(city):
     global token_cache
+    global last_dsm_id
+    global last_cli_id
 
     if token_cache is None:
         refresh_wethr_token()
@@ -118,25 +123,22 @@ def get_current_temp_from_wethr(city):
     json = response.json()
     latest_observation = json[-1]
 
-    if latest_observation.get("cli_high_fahrenheit") and latest_observation.get("dsm_high_fahrenheit"):
-        temp = max(latest_observation.get("cli_high_fahrenheit"), latest_observation.get("dsm_high_fahrenheit"))
-        print("CLI TEMP")
-        discord.send_webhook("CLI TEMP", f"CLI: {latest_observation.get('cli_high_fahrenheit')}\nDSM: {latest_observation.get('dsm_high_fahrenheit')}\nMax: {temp}")
-        return temp
-
-
-    if latest_observation.get("cli_high_fahrenheit"):
-        temp = latest_observation.get("cli_high_fahrenheit")
-        print("CLI TEMP")
-        discord.send_webhook("CLI TEMP", f"CLI: {latest_observation.get('cli_high_fahrenheit')}")
-        return temp
-
-    if latest_observation.get("dsm_high_fahrenheit"):
-        temp = latest_observation.get("dsm_high_fahrenheit")
-        print("CLI TEMP")
-        discord.send_webhook("CLI TEMP", f"DSM: {latest_observation.get('dsm_high_fahrenheit')}")
-        return temp
-
+    # Find the latest observation that has a dsm_high_fahrenheit or cli_high_fahrenheit
+    for observation in reversed(json):
+        if observation.get("cli_high_fahrenheit"):
+            if last_cli_id != observation.get("id"):
+                temp = observation.get("cli_high_fahrenheit")
+                discord.send_webhook("CLI TEMP FOUND", f"Temp: {temp}")
+                last_cli_id = observation.get("id")
+                return temp
+            last_cli_id = observation.get("id")
+        if observation.get("dsm_high_fahrenheit"):
+            if last_dsm_id != observation.get("id"):
+                temp = observation.get("dsm_high_fahrenheit")
+                discord.send_webhook("DSM TEMP FOUND", f"Temp: {temp}")
+                last_cli_id = observation.get("id")
+                return temp
+            last_dsm_id = observation.get("id")
 
     if latest_observation.get("lowest_possible"):
         return latest_observation.get("lowest_possible")

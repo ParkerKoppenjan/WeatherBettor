@@ -407,6 +407,7 @@ class Market:
                 if r.get_ticker() == ticker:
                     r.set_yes_price(yes_price, yes_price_ask)
                     r.set_no_price(no_price, no_price_ask)
+                    print(f"Updated prices for {r} to {yes_price} and {no_price}")
 
     def get_bets(self):
         return self.bets
@@ -480,7 +481,6 @@ def get_account_balance():
     """Retrieves the available balance from the Kalshi API."""
     url = "https://api.elections.kalshi.com/trade-api/v2/portfolio/balance"
     response = make_signed_request_get(url)
-    print(response)
 
     if isinstance(response, dict) and "balance" in response:
         return response["balance"] / 100
