@@ -136,7 +136,7 @@ def get_current_temp_from_wethr(city):
             if last_dsm_id != observation.get("id"):
                 temp = observation.get("dsm_high_fahrenheit")
                 discord.send_webhook("DSM TEMP FOUND", f"Temp: {temp}")
-                last_cli_id = observation.get("id")
+                last_dsm_id = observation.get("id")
                 return temp
             last_dsm_id = observation.get("id")
 
