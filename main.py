@@ -10,11 +10,11 @@ import settings
 def main():
     original_balance = get_account_balance()
     print("Weather Bettor v0.1")
-    print("Created by: @elliotjarnit and @ParkerKoppenjan")
+    print("Created by: @elliotjarnit and @ParkerKoppenjan" + "\n")
     print("Starting at " + str(datetime.datetime.now()))
-    print("Selected market: " + settings.SELECTED_MARKET + "\n")
-    print("Algorithm: " + settings.ALGORITHM.NAME + " " + settings.ALGORITHM.VERSION + "\n")
-    print("Account balance: " + str(original_balance))
+    print("Selected market: " + settings.SELECTED_MARKET)
+    print("Algorithm: " + settings.ALGORITHM.NAME + " " + settings.ALGORITHM.VERSION)
+    print("Account balance: " + str(original_balance) + "\n")
 
     discord.send_webhook("Bot Started",
                          "Bot started successfully on " + settings.SELECTED_MARKET + "\n" +

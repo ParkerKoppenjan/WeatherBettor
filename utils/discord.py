@@ -44,9 +44,7 @@ def send_webhook(event, message):
 
     if os.environ["DISCORD_WEBHOOK_URL"]:
         response = requests.post(os.environ["DISCORD_WEBHOOK_URL"], json=body)
-        if response.status_code == 204:
-            print("Discord notification sent successfully.")
-        else:
+        if response.status_code != 204:
             print("Failed to send Discord notification.")
     else:
         print("No webhook URL provided, skipping Discord notification.")
