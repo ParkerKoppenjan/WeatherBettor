@@ -19,6 +19,8 @@ def send_webhook(event, message):
         color = 0x8B0000
     elif event == "Bot Started":
         color = 0x00FF00
+    elif event == "DSM TEMP FOUND" or event == "CLI TEMP FOUND":
+        color = 0xDFAF37
 
     body = {
         "content": "",
