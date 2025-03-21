@@ -39,9 +39,10 @@ class GuaranteedNoAlgorithm(Algorithm):
                     potential_ranges.append(r)
 
         if potential_ranges:  # Check if we have any viable ranges
+            discord.send_webhook("Debug", f"Checking if price is viable for range {r}: No Price = {r.get_no_price()}")
             potential_ranges = sorted(potential_ranges, key=lambda x: x.get_no_price())
             for r in potential_ranges:
-                if r.get_no_price() > 0.96:  # Makes sure price is low enough to make any money
+                if r.get_no_price() > 0.98:  # Makes sure price is low enough to make any money
                     break
                 elif market.make_bet(r, settings.MAX_BET, False): # confirms the bet goes through properly
                     self.last_bet_prices[r] = r.get_no_price()
