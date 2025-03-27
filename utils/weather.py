@@ -111,7 +111,7 @@ def get_current_temp_from_wethr(city):
 
     station = city_stations.get(city.upper())
 
-    url = f"https://wethr.net/backend/fetch_asos_data.php?station={station}&date={date}&timezone=America/Los_Angeles&token={token_cache}"
+    url = f"http://wethr.net/marketv2.php?action=fetch_asos_data&station={station}&date={date}&timezone=America/Los_Angeles&token={token_cache}"
     headers = fake_headers
     headers["Cookie"] = cookie_cache
     response = requests.get(url, headers=headers)
